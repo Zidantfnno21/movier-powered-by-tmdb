@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 final ThemeData darkTheme = ThemeData(
   useMaterial3: true,
@@ -13,10 +14,13 @@ final ThemeData darkTheme = ThemeData(
   ),
   scaffoldBackgroundColor: const Color(0xFF121212), // Near black
   iconTheme: const IconThemeData(color: Color(0xFF4CAF50)), // Green icons
-  textTheme: const TextTheme(
-    bodyLarge: TextStyle(color: Color(0xFFE0E0E0), fontSize: 16), // Light gray
-    bodyMedium: TextStyle(color: Color(0xFFBDBDBD), fontSize: 14), // Medium gray
-    titleLarge: TextStyle(color: Color(0xFFFFFFFF), fontWeight: FontWeight.bold),
+  textTheme: TextTheme(
+    bodyLarge: GoogleFonts.plusJakartaSans(
+        color: const Color(0xFFE0E0E0), fontSize: 16), // Light gray
+    bodyMedium: GoogleFonts.plusJakartaSans(
+        color: const Color(0xFFBDBDBD), fontSize: 14), // Medium gray
+    titleLarge: GoogleFonts.plusJakartaSans(
+        color: const Color(0xFFFFFFFF), fontWeight: FontWeight.bold),
   ),
   appBarTheme: const AppBarTheme(
     backgroundColor: Color(0xFF1F1F1F), // Dark gray
@@ -74,11 +78,13 @@ final ThemeData lightTheme = ThemeData(
   ),
   scaffoldBackgroundColor: const Color(0xFFF9F9F9), // Off-white background
   iconTheme: const IconThemeData(color: Color(0xFF9C27B0)), // Purple icons
-  textTheme: const TextTheme(
-    bodyLarge: TextStyle(color: Color(0xFF212121), fontSize: 16), // Dark gray
-    bodyMedium: TextStyle(color: Color(0xFF616161), fontSize: 14), // Medium gray
-    titleLarge: TextStyle(
-        color: Color(0xFF212121), fontWeight: FontWeight.bold, fontSize: 20),
+  textTheme: TextTheme(
+    bodyLarge: GoogleFonts.plusJakartaSans(
+        color: const Color(0xFF212121), fontSize: 16), // Dark gray
+    bodyMedium: GoogleFonts.plusJakartaSans(
+        color: const Color(0xFF616161), fontSize: 14), // Medium gray
+    titleLarge: GoogleFonts.plusJakartaSans(
+        color: const Color(0xFF212121), fontWeight: FontWeight.bold, fontSize: 20),
   ),
   appBarTheme: const AppBarTheme(
     backgroundColor: Color(0xFFFFFFFF), // White background
