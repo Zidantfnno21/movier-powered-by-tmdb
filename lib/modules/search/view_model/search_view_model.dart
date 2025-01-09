@@ -13,15 +13,14 @@ class SearchViewModel extends ChangeNotifier {
   SearchViewModel(this._searchRepository);
 
   List<dynamic> _searchResults = [];
-  //todo: create history
-  static List<dynamic> _history = [];
+  List<Map<String, String>> _suggestionResults = [];
   bool _isLoading = false;
   String _query = '';
   String _lastQuery = '';
   int _currentPage = 1;
 
   List<dynamic> get searchResults => _searchResults;
-  List<dynamic> get history => _history;
+  List<Map<String, String>> get suggestionResults => _suggestionResults;
   bool get isLoading => _isLoading;
   String get query => _query;
   String get lastQuery => _lastQuery;
@@ -38,6 +37,7 @@ class SearchViewModel extends ChangeNotifier {
 
   void clearResults() {
     _searchResults = [];
+    _suggestionResults = [];
     _lastQuery = '';
     notifyListeners();
   }
@@ -47,12 +47,37 @@ class SearchViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<List<Map<String, String>>> suggestion(String query) async {
+    try {
+      final result = await fetchSearch(query, 1);
+      if (result is Ok<ApiResponse<dynamic>>) {
+        _suggestionResults = result.value.results.map<Map<String, String>>((item) {
+          final mediaType = item['media_type'] as String? ?? 'unknown';
+          final nameOrTitle = mediaType == 'movie'
+              ? item['title'] as String? ?? 'Unknown Movie'
+              : mediaType == 'tv'
+              ? item['name'] as String? ?? 'Unknown TV Show'
+              : mediaType == 'person'
+              ? item['name'] as String? ?? 'Unknown Person'
+              : 'Unknown';
+          return {
+            'name': nameOrTitle,
+            'media_type': mediaType,
+          };
+        }).toList();
+      }
+    } catch (e) {
+      print('Error fetching suggestions: $e');
+    }
+
+    return [];
+  }
+
+
   Future<Iterable<dynamic>> search(String query) async {
-    print(_searchResults.length);
     _isLoading = true;
     _lastQuery = query;
     _currentPage = 1;
-    addHistory(query);
     notifyListeners();
 
     final result = await fetchSearch(query, _currentPage);
@@ -66,7 +91,6 @@ class SearchViewModel extends ChangeNotifier {
       }
       _query = query;
       _isLoading = false;
-      print(_searchResults.length);
       notifyListeners();
       return _searchResults;
     }
@@ -92,11 +116,6 @@ class SearchViewModel extends ChangeNotifier {
         notifyListeners();
       });
     }
-  }
-
-  void addHistory(dynamic searchItem) {
-    _history.add(searchItem);
-    notifyListeners();
   }
 
   Movies convertToMovie(Map<String, dynamic> item) {

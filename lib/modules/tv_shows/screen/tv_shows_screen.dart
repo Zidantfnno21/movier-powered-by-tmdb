@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:the_movie_databases/data/local/databases/entity/tv_shows.dart';
 import 'package:the_movie_databases/modules/tv_shows/view_model/tv_shows_view_model.dart';
+import 'package:the_movie_databases/utils/constant.dart';
+import 'package:the_movie_databases/widgets/scroll_aware_fab.dart';
 
 import '../../../config/routes.dart';
 import '../../../widgets/rate_widget.dart';
@@ -35,7 +37,6 @@ class _TvShowsScreenState extends State<TvShowsScreen> {
 
     if (pixels >= threshold) {
       if (!widget.viewModel.isLoadingMore) {
-        print('Loading more TV shows...');
         widget.viewModel.loadMoreTvShows();
       }
     }
@@ -49,99 +50,119 @@ class _TvShowsScreenState extends State<TvShowsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return ListenableBuilder(
-      listenable: widget.viewModel,
-      builder: (context, child) {
-        if (widget.viewModel.isLoading) {
-          return const Center(
-            child: CircularProgressIndicator(),
-          );
-        } else if (widget.viewModel.tvShows.isEmpty) {
-          return const Center(child: Text("No data available"));
-        }
+    return Scaffold(
+      body: ListenableBuilder(
+        listenable: widget.viewModel,
+        builder: (context, child) {
+          return RefreshIndicator(
+            onRefresh: () async {
+              widget.viewModel.refresh();
+            },
+            child: CustomScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              controller: _scrollController,
+              slivers: [
+                SliverPadding(
+                  padding: const EdgeInsets.all(16),
+                  sliver: SliverList(
+                    delegate: SliverChildListDelegate([
+                      _buildSectionTitle(
+                        context,
+                        "Tv Shows"
+                      ),
+                    ]),
+                  ),
+                ),
+                SliverPadding(
+                  padding: const EdgeInsets.all(16),
+                  sliver: SliverGrid(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        final tvShows = widget.viewModel.tvShows[index];
+                        final String title = tvShows.name;
+                        final String imagePath =
+                            'https://image.tmdb.org/t/p/w500${tvShows.posterPath}';
+                        final double rating = tvShows.voteAverage;
+                        final String releaseDate = tvShows.firstAirDate;
 
-        return RefreshIndicator(
-          onRefresh: () async {
-            widget.viewModel.refresh();
-          },
-          child: CustomScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            controller: _scrollController,
-            slivers: [
-              SliverPadding(
-                padding: const EdgeInsets.all(16),
-                sliver: SliverList(
-                  delegate: SliverChildListDelegate([
-                    _buildSectionTitle(
-                      context,
-                      "Tv Shows",
-                      filters: [
-                        'Popular',
-                        'Now Playing',
-                        'Upcoming',
-                        'Top Rated'
-                      ],
-                      onFilterChanged: (value) {
-                        setState(() {
-                          // Handle filter changes here
-                        });
+                        return Padding(
+                          padding: EdgeInsets.zero,
+                          child: IntrinsicHeight(
+                            child: _buildCard(
+                                title, imagePath, rating, releaseDate, tvShows),
+                          ),
+                        );
                       },
+                      childCount: widget.viewModel.tvShows.length,
                     ),
-                  ]),
-                ),
-              ),
-              SliverPadding(
-                padding: const EdgeInsets.all(16),
-                sliver: SliverGrid(
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) {
-                      final tvShows = widget.viewModel.tvShows[index];
-                      final String title = tvShows.name;
-                      final String imagePath =
-                          'https://image.tmdb.org/t/p/w500${tvShows.posterPath}';
-                      final double rating = tvShows.voteAverage;
-                      final String releaseDate = tvShows.firstAirDate;
-
-                      return Padding(
-                        padding: EdgeInsets.zero,
-                        child: IntrinsicHeight(
-                          child: _buildCard(
-                              title, imagePath, rating, releaseDate, tvShows),
-                        ),
-                      );
-                    },
-                    childCount: widget.viewModel.tvShows.length,
-                  ),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    crossAxisSpacing: 8,
-                    mainAxisSpacing: 12,
-                    childAspectRatio: 0.5,
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 8,
+                      mainAxisSpacing: 12,
+                      childAspectRatio: 0.5,
+                    ),
                   ),
                 ),
-              ),
-              // if (widget.viewModel.isLoadingMore)
-              //   const SliverToBoxAdapter(
-              //     child: Padding(
-              //       padding: EdgeInsets.all(16.0),
-              //       child: Center(
-              //         child: CircularProgressIndicator(),
-              //       ),
-              //     ),
-              //   ),
-            ],
-          ),
-        );
-      },
+                SliverToBoxAdapter(
+                  child: Visibility(
+                    visible: widget.viewModel.isLoadingMore,
+                    child: const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 8.0),
+                      child: Column(
+                        children: [
+                          CircularProgressIndicator(),
+                          SizedBox(
+                            height: 4.0,
+                          ),
+                          Text('Loading...'),
+                          SizedBox(
+                            height: 8.0,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                SliverToBoxAdapter(
+                  child: Visibility(
+                    visible: !widget.viewModel.hasMore,
+                    child: const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 8.0),
+                      child: Column(
+                        children: [
+                          SizedBox(
+                            height: 4.0,
+                          ),
+                          Text('Yay!, You reach the bottom!🎊🎉'),
+                          SizedBox(
+                            height: 10.0,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                )
+                // if (widget.viewModel.isLoadingMore)
+                //   const SliverToBoxAdapter(
+                //     child: Padding(
+                //       padding: EdgeInsets.all(16.0),
+                //       child: Center(
+                //         child: CircularProgressIndicator(),
+                //       ),
+                //     ),
+                //   ),
+              ],
+            ),
+          );
+        },
+      ),
+      floatingActionButton: ScrollAwareFab(scrollController: _scrollController,),
     );
   }
 
   Widget _buildSectionTitle(
     BuildContext context,
-    String title, {
-    List<String>? filters,
-    ValueChanged<String?>? onFilterChanged,
-  }) {
+    String title,) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -151,19 +172,16 @@ class _TvShowsScreenState extends State<TvShowsScreen> {
                 fontWeight: FontWeight.bold,
               ),
         ),
-        if (filters != null && filters.isNotEmpty)
-          DropdownButton<String>(
-            value: filters.first,
-            items: filters.map((filter) {
+        DropdownButton<String>(
+            value: widget.viewModel.selectedFilter,
+            items: Constant.tvFilter.map((e) {
               return DropdownMenuItem<String>(
-                value: filter,
-                child: Text(filter),
+                value: e['value']!,
+                child: Text(e['name']!),
               );
             }).toList(),
             onChanged: (value) {
-              if (onFilterChanged != null) {
-                onFilterChanged(value); // Optional callback
-              }
+              widget.viewModel.updateSelectedFilter(value!);
             },
           ),
       ],

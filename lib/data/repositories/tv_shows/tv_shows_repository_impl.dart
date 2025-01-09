@@ -17,9 +17,9 @@ class TvShowsRepositoryImpl implements TvShowsRepository{
   final _log = Logger('TvShowsRepositoryImpl');
 
   @override
-  Future<Result<List<TvShows>>> fetchTvShows (int page) async {
+  Future<Result<List<TvShows>>> fetchTvShows (int page, String filter) async {
     try{
-      final response = await _tmdbClient.fetchPopularTvShows(page);
+      final response = await _tmdbClient.fetchTvShows(page, filter);
       
       if(response is Ok<ApiResponse<TvShows>>){
         _log.info('Fetched ${response.value.results.length} tv shows');
@@ -33,7 +33,6 @@ class TvShowsRepositoryImpl implements TvShowsRepository{
     }
   }
 
-  @override
   Future<List<TvShows>> fetchTvShowsFromDb() async {
     try {
       final database = await $FloorAppDatabases.databaseBuilder('app_database.db').build();
@@ -44,9 +43,9 @@ class TvShowsRepositoryImpl implements TvShowsRepository{
     }
   }
 
-  @override
   Future<void> insertTvShowsToDb(List<TvShows> tvShowList) async {
     final database = await $FloorAppDatabases.databaseBuilder('app_database.db').build();
+    database.tvShowsDao.deleteAllTvShows();
     for (var tvShow in tvShowList) {
       await database.tvShowsDao.insertTvShows(tvShow);
     }

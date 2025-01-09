@@ -70,7 +70,7 @@ ApiResponseVideos _$ApiResponseVideosFromJson(Map<String, dynamic> json) =>
     ApiResponseVideos(
       id: (json['id'] as num).toInt(),
       results: (json['results'] as List<dynamic>)
-          .map((e) => Videos.fromJson(e as Map<String, dynamic>))
+          .map((e) => Video.fromJson(e as Map<String, dynamic>))
           .toList(),
     );
 

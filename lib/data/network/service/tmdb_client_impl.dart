@@ -4,13 +4,15 @@ import 'package:dio/dio.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:logging/logging.dart';
 import 'package:the_movie_databases/data/local/databases/entity/account/account_details.dart';
+import 'package:the_movie_databases/data/network/model/details_people/details_people.dart';
 import 'package:the_movie_databases/data/network/service/tmdb_client.dart';
-import 'package:the_movie_databases/data/network/videos.dart';
 import 'package:the_movie_databases/utils/result.dart';
 import '../../local/databases/entity/movies.dart';
 import '../../local/databases/entity/people.dart';
 import '../../local/databases/entity/trending.dart';
 import '../../local/databases/entity/tv_shows.dart';
+import '../model/details_movie/details_movies.dart';
+import '../model/details_tv_shows/details_tv_shows.dart';
 import '../response/api_response.dart';
 
 class TmdbClientImpl implements TmdbClient {
@@ -27,6 +29,14 @@ class TmdbClientImpl implements TmdbClient {
   @override
   setSessionIdsProvider(SessionIdsProvider provider) {
     sessionIdsProvider = provider;
+  }
+
+  @override
+  IsoCountryCodeProvider? isoCountryCodeProvider;
+
+  @override
+  setIsoCountryCodeProvider(IsoCountryCodeProvider provider) {
+    isoCountryCodeProvider = provider;
   }
 
   @override
@@ -50,8 +60,10 @@ class TmdbClientImpl implements TmdbClient {
   }
 
   @override
-  Future<Result<ApiResponse<Movies>>> fetchPopularMovies(int page) async {
-    final String url = '$baseUrl/movie/popular?api_key=$apiKey&page=$page';
+  Future<Result<ApiResponse<Movies>>> fetchMovies(int page, String filter) async {
+    final String? region = isoCountryCodeProvider?.call().values.first;
+    _log.info('Region fetched $region');
+    final String url = '$baseUrl/movie/$filter?api_key=$apiKey&page=$page&region=$region';
 
     try {
       final response = await dio.get(url);
@@ -71,8 +83,10 @@ class TmdbClientImpl implements TmdbClient {
   }
 
   @override
-  Future<Result<ApiResponse<TvShows>>> fetchPopularTvShows(int page) async {
-    final String url = '$baseUrl/tv/popular?api_key=$apiKey&page=$page';
+  Future<Result<ApiResponse<TvShows>>> fetchTvShows(int page, String filter) async {
+    final String? region = isoCountryCodeProvider?.call().values.first;
+    _log.info('Region fetched $region');
+    final String url = '$baseUrl/tv/$filter?api_key=$apiKey&page=$page&region=$region';
 
     try {
       final response = await dio.get(url);
@@ -115,7 +129,7 @@ class TmdbClientImpl implements TmdbClient {
 
     try {
       final response = await dio.get(url);
-      print('Raw Response Data: ${response.data}');
+      _log.info('Raw Response Data: ${response.data}');
 
       if (response.statusCode == 200) {
         if (response.data != null && response.data['genres'] != null) {
@@ -154,7 +168,7 @@ class TmdbClientImpl implements TmdbClient {
 
     try {
       final response = await dio.get(url);
-      print('Raw Response Data: ${response.data}');
+      _log.info('Raw Response Data: ${response.data}');
 
       if (response.statusCode == 200) {
         if (response.data != null && response.data['genres'] != null) {
@@ -192,7 +206,7 @@ class TmdbClientImpl implements TmdbClient {
     final String url = '$baseUrl/account?api_key=$apiKey&session_id=$sessionId';
     try {
       final response = await dio.get(url);
-      print('Raw Response Data: ${response.data}');
+      _log.info('Raw Response Data: ${response.data}');
 
       if (response.statusCode == 200) {
         final jsonResponse = response.data;
@@ -228,7 +242,7 @@ class TmdbClientImpl implements TmdbClient {
         '$baseUrl/search/multi?api_key=$apiKey&query=$query&page=$page';
     try {
       final response = await dio.get(url);
-      print('Raw Response Data: ${response.data}');
+      _log.info('Raw Response Data: ${response.data}');
 
       if (response.statusCode == 200) {
         final jsonResponse = response.data;
@@ -297,7 +311,7 @@ class TmdbClientImpl implements TmdbClient {
         '$baseUrl/$mediaType/$mediaId/account_states?api_key=$apiKey&session_id=$sessionId';
     try {
       final response = await dio.get(url);
-      print('Raw Response Data: ${response.data}');
+      _log.info('Raw Response Data: ${response.data}');
       if (response.statusCode == 200) {
         final jsonResponse = response.data;
         _log.fine(jsonResponse);
@@ -359,7 +373,7 @@ class TmdbClientImpl implements TmdbClient {
   }
 
   @override
-  Future<Result<ApiResponseVideos>> fetchMovieVideos({required int id}) async  {
+  Future<Result<ApiResponseVideos>> fetchMovieVideos({required int id}) async {
     final String url = '$baseUrl/movie/$id/videos?api_key=$apiKey';
     try {
       final response = await dio.get(url);
@@ -379,7 +393,8 @@ class TmdbClientImpl implements TmdbClient {
   }
 
   @override
-  Future<Result<ApiResponseVideos>> fetchTvShowsVideos({required int id}) async {
+  Future<Result<ApiResponseVideos>> fetchTvShowsVideos(
+      {required int id}) async {
     final String url = '$baseUrl/tv/$id/videos?api_key=$apiKey';
     try {
       final response = await dio.get(url);
@@ -392,6 +407,60 @@ class TmdbClientImpl implements TmdbClient {
         );
       } else {
         return Result.error(Exception('Failed to fetch tv shows videos'));
+      }
+    } catch (e) {
+      return Result.error(Exception('$e'));
+    }
+  }
+
+  @override
+  Future<Result<DetailsMovies>> fetchMovieDetails(int id) async {
+    final String? sessionId = sessionIdsProvider?.call();
+    _log.info('sessionId: $sessionId');
+    final String url =
+        '$baseUrl/movie/$id?api_key=$apiKey${sessionId != null ? '&$sessionId' : ''}&append_to_response=account_states%2Cvideos%2Ccredits';
+    try {
+      final response = await dio.get(url);
+      _log.finer('raw json(movie details): ${response.data}');
+      if (response.statusCode == 200) {
+        return Result.ok(DetailsMovies.fromJson(response.data));
+      } else {
+        return Result.error(Exception('Failed to fetch movie details'));
+      }
+    } catch (e) {
+      return Result.error(Exception('$e'));
+    }
+  }
+
+  @override
+  Future<Result<DetailsTvShows>> fetchTvShowsDetails(int id) async {
+    final String? sessionId = sessionIdsProvider?.call();
+    final String url =
+        '$baseUrl/tv/$id?api_key=$apiKey${sessionId != null ? '&$sessionId' : ''}&append_to_response=account_states%2Cvideos%2Caggregate_credits';
+    try {
+      final response = await dio.get(url);
+      _log.finer('raw json(tv shows details): ${response.data}');
+
+      if (response.statusCode == 200) {
+        return Result.ok(DetailsTvShows.fromJson(response.data));
+      } else {
+        return Result.error(Exception('Failed to fetch tv shows details'));
+      }
+    } catch (e) {
+      return Result.error(Exception('$e'));
+    }
+  }
+
+  @override
+  Future<Result<DetailsPeople>> fetchPeopleDetails(int id) async {
+    final String url = '$baseUrl/person/$id?api_key=$apiKey&append_to_response=combined_credits';
+    try {
+      final response = await dio.get(url);
+      _log.finer('raw json(people details): ${response.data}');
+      if (response.statusCode == 200) {
+        return Result.ok(DetailsPeople.fromJson(response.data));
+      } else {
+        return Result.error(Exception('Failed to fetch people details'));
       }
     } catch (e) {
       return Result.error(Exception('$e'));

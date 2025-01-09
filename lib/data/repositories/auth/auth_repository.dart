@@ -4,9 +4,9 @@ import '../../../config/auth_state.dart';
 import '../../../utils/result.dart';
 
 abstract class AuthRepository extends ChangeNotifier {
+  Map<String, String?>? get region;
   String? get sessionId;
-  AuthState get authState;
-  Future<bool> get isAuth;
+  Future<AuthState> get authState;
   Future<Result<void>> login();
   Future<Result<void>> createSessionId(String requestToken);
   Future<Result<void>> logOut();

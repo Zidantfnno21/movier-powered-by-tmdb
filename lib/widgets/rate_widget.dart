@@ -8,10 +8,17 @@ class CircularProgressIndicatorWithPercentage extends StatelessWidget {
     required this.percentage,
   });
 
-  Color _getProgressColor(double percentage) {
-    if (percentage >= 70) {
+  Color _getProgressColor(double percentage, BuildContext context) {
+    if (percentage == 0) {
+      // Not rated
+      return Colors.transparent;
+    }
+
+    if(percentage.abs() < 1e-2) {
+      return Theme.of(context).primaryColorLight; // Near perfect
+    } else if (percentage >= 61.8) {
       return Colors.green; // High score
-    } else if (percentage >= 50) {
+    } else if (percentage >= 23.6) {
       return Colors.yellow; // Medium score
     } else {
       return Colors.red; // Low score
@@ -30,14 +37,14 @@ class CircularProgressIndicatorWithPercentage extends StatelessWidget {
             value: percentage / 100,
             strokeWidth: 4,
             backgroundColor: Colors.grey.shade300,
-            valueColor: AlwaysStoppedAnimation<Color>(_getProgressColor(percentage)),
+            valueColor: AlwaysStoppedAnimation<Color>(_getProgressColor(percentage, context)),
           ),
         ),
         Text(
-          "${percentage.toInt()}%",
+          percentage==0 ? "N/A" : "${percentage.toInt()}%",
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
             fontWeight: FontWeight.bold,
-            color: _getProgressColor(percentage),
+            color: _getProgressColor(percentage, context),
           ),
         ),
       ],

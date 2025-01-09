@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:the_movie_databases/utils/auth_extensions.dart';
+
 import 'package:the_movie_databases/widgets/app_bar_widget.dart';
 
-import '../config/auth_state.dart';
 import '../data/repositories/auth/auth_repository.dart';
 
 class BottomNavigation extends StatefulWidget {
@@ -19,11 +18,13 @@ class _BottomNavigationState extends State<BottomNavigation> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: CustomAppBar(),
+      appBar: const CustomAppBar(),
       body: widget.navigationShell,
       bottomNavigationBar: BottomNavigationBar(
         elevation: 0,
-        selectedItemColor: Theme.of(context).colorScheme.primary,
+        selectedItemColor: Theme.of(context).brightness == Brightness.light
+            ? Theme.of(context).colorScheme.primary
+            : Theme.of(context).colorScheme.secondary,
         selectedLabelStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
               fontWeight: FontWeight.bold,
             ),
@@ -32,11 +33,11 @@ class _BottomNavigationState extends State<BottomNavigation> {
         unselectedLabelStyle: Theme.of(context).textTheme.bodyMedium,
         type: BottomNavigationBarType.fixed,
         currentIndex: widget.navigationShell.currentIndex,
-        onTap: (index) {
+        onTap: (index) async {
           if (index == 4) {
-            final authState = context.read<AuthRepository>().authState;
+            final authState = await context.read<AuthRepository>().authState;
 
-            if (!authState.isAuthenticated) {
+            if (!authState.isAuthenticated && context.mounted) {
               showDialog(
                 context: context,
                 builder: (context) => AlertDialog(

@@ -1,5 +1,6 @@
 import 'package:logging/logging.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:the_movie_databases/config/auth_state.dart';
 
 import '../utils/result.dart';
 
@@ -7,6 +8,7 @@ class SharedPreferencesService {
   static const _tokenKey = 'TOKEN';
   static const _accountKey = 'ACCOUNT';
   static const _themeKey = 'THEME';
+  static const _guestExpiredAt = 'GUEST';
 
   final _log = Logger('SharedPreferencesService');
 
@@ -86,6 +88,67 @@ class SharedPreferencesService {
     } on Exception catch (e) {
       _log.warning('Failed to get theme', e);
       return Result.error(e);
+    }
+  }
+
+  Future<Result<void>> saveGuestExpiredTime(String? expiresAt) async {
+    try {
+      final sharedPreferences = await SharedPreferences.getInstance();
+      if (expiresAt == null) {
+        _log.finer('Removed guest expired time');
+        await sharedPreferences.remove(_guestExpiredAt);
+      } else {
+        _log.finer('Replaced guest expired time');
+        await sharedPreferences.setString(_guestExpiredAt, expiresAt);
+      }
+      return const Result.ok(null);
+    } on Exception catch (e) {
+      _log.warning('Failed to set guest expired time', e);
+      return Result.error(e);
+    }
+  }
+
+  Future<Result<String?>> fetchGuestExpiredTime() async {
+    try {
+      final sharedPreferences = await SharedPreferences.getInstance();
+      _log.finer('Got guest expired time from SharedPreferences');
+      return Result.ok(sharedPreferences.getString(_guestExpiredAt));
+    } on Exception catch (e) {
+      _log.warning('Failed to get guest expired time', e);
+      return Result.error(e);
+    }
+  }
+
+  Future<Result<void>> saveAuthState(AuthState state) async {
+    try {
+      final sharedPreferences = await SharedPreferences.getInstance();
+      await sharedPreferences.setInt(
+          'authState', state.index);
+      _log.finer('Auth state saved to ${state.index}');
+      return const Result.ok(null); // Return success
+    } on Exception catch (e) {
+      _log.warning('Failed to get auth state', e);
+      return Result.error(Exception(
+          'Failed to save auth state $e')); // Return failure if an error occurs
+    }
+  }
+
+  Future<Result<AuthState>> fetchAuthState() async {
+    try {
+      final sharedPreferences = await SharedPreferences.getInstance();
+      final authStateInt = sharedPreferences.getInt('authState');
+
+      if (authStateInt != null) {
+        final authState = AuthState.values[authStateInt];
+        _log.finer('Got the auth state: $authState');
+        return Result.ok(authState);
+      } else {
+        _log.warning('Auth state not found, returning default AuthState.unauthenticated');
+        return const Result.ok(AuthState.unauthenticated);
+      }
+    } on Exception catch (e) {
+      _log.severe('Failed to fetch auth state: $e');
+      return Result.error(Exception('Failed to fetch auth state: $e'));
     }
   }
 }

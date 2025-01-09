@@ -45,7 +45,7 @@ class _HomeScreenState extends State<HomeScreen> {
     cardHeight = screenHeight * 0.25;
     imageCardHeight = cardHeight * 0.8;
 
-    listHeight = cardHeight + 16.0;
+    listHeight = cardHeight + 16.0 + 50.0;
 
     const double maxCardWidth = 150.0;
     cardWidth = (screenWidth * 0.4).clamp(100.0, maxCardWidth);
@@ -69,13 +69,13 @@ class _HomeScreenState extends State<HomeScreen> {
           "Trending",
         ),
         _buildHorizontalTrendingList(),
-        const SizedBox(height: 16),
+        const SizedBox(height: 8),
         _buildSectionTitlePopular(
           context,
           "Popular!",
         ),
         _buildHorizontalPopularList(),
-        const SizedBox(height: 16),
+        const SizedBox(height: 8),
         _buildSectionTitleVariant(context, "Popular People"),
         _buildHorizontalListVariant("Popular People"),
       ],
@@ -332,7 +332,7 @@ class _HomeScreenState extends State<HomeScreen> {
         context.push('/detail', extra: data);
       },
       child: SizedBox(
-        height: cardHeight,
+        width: cardWidth,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -340,31 +340,33 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 ClipRRect(
                   borderRadius: BorderRadius.circular(16),
-                  child: Image.network(
-                    imagePath,
-                    height: imageCardHeight ,
-                    width: cardWidth,
-                    fit: BoxFit.cover,
-                    loadingBuilder: (context, child, loadingProgress) {
-                      if (loadingProgress == null) {
-                        return child; // Image has finished loading
-                      }
-
-                      return Shimmer.fromColors(
-                        baseColor: Colors.grey[300]!,
-                        highlightColor: Colors.grey[100]!,
-                        child: Container(
-                          height: imageCardHeight ,
-                          width: cardWidth,
-                          color: Colors.grey,
-                        ),
-                      );
-                    },
-                    errorBuilder: (context, error, stackTrace) => Container(
-                      height: imageCardHeight,
+                  child: AspectRatio(
+                    aspectRatio: 2 / 3,
+                    child: Image.network(
+                      imagePath,
                       width: cardWidth,
-                      color: Colors.grey,
-                      child: const Icon(Icons.error, color: Colors.white),
+                      fit: BoxFit.cover,
+                      loadingBuilder: (context, child, loadingProgress) {
+                        if (loadingProgress == null) {
+                          return child; 
+                        }
+                    
+                        return Shimmer.fromColors(
+                          baseColor: Colors.grey[300]!,
+                          highlightColor: Colors.grey[100]!,
+                          child: Container(
+                            height: imageCardHeight ,
+                            width: cardWidth,
+                            color: Colors.grey,
+                          ),
+                        );
+                      },
+                      errorBuilder: (context, error, stackTrace) => Container(
+                        height: imageCardHeight,
+                        width: cardWidth,
+                        color: Colors.grey,
+                        child: const Icon(Icons.error, color: Colors.white),
+                      ),
                     ),
                   )
                 ),
@@ -440,46 +442,51 @@ class _HomeScreenState extends State<HomeScreen> {
       onTap: () {
         context.push('/detail', extra: item);
       },
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Stack(
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(16),
-                child: Image.network(
-                  imagePath,
-                  height: imageCardHeight,
-                  width: cardWidth,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => Container(
-                    height: imageCardHeight,
-                    width: cardWidth,
-                    color: Colors.grey,
-                    child: const Icon(Icons.error, color: Colors.white),
+      child: SizedBox(
+        width: cardWidth,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Stack(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: AspectRatio(
+                    aspectRatio: 2/3,
+                    child: Image.network(
+                      imagePath,
+                      width: cardWidth,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => Container(
+                        height: imageCardHeight,
+                        width: cardWidth,
+                        color: Colors.grey,
+                        child: const Icon(Icons.error, color: Colors.white),
+                      ),
+                    ),
                   ),
                 ),
-              ),
-              // Floating rating indicator
-            ],
-          ),
-          const SizedBox(height: 8),
-          // Title outside the card
-          DynamicSlidingText(
-              text: title,
-              maxWidth: cardWidth,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-          )
-          // Text(
-          //   title,
-          //   maxLines: 2,
-          //   overflow: TextOverflow.ellipsis,
-          //   style: Theme.of(context).textTheme.bodyLarge,
-          // ),
-        ],
+                // Floating rating indicator
+              ],
+            ),
+            const SizedBox(height: 8),
+            // Title outside the card
+            DynamicSlidingText(
+                text: title,
+                maxWidth: cardWidth,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+            )
+            // Text(
+            //   title,
+            //   maxLines: 2,
+            //   overflow: TextOverflow.ellipsis,
+            //   style: Theme.of(context).textTheme.bodyLarge,
+            // ),
+          ],
+        ),
       ),
     );
   }

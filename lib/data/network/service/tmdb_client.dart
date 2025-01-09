@@ -1,4 +1,5 @@
 
+import 'package:the_movie_databases/data/network/model/details_people/details_people.dart';
 import 'package:the_movie_databases/utils/result.dart';
 
 import '../../local/databases/entity/account/account_details.dart';
@@ -6,25 +7,35 @@ import '../../local/databases/entity/movies.dart';
 import '../../local/databases/entity/people.dart';
 import '../../local/databases/entity/trending.dart';
 import '../../local/databases/entity/tv_shows.dart';
+import '../model/details_movie/details_movies.dart';
+import '../model/details_tv_shows/details_tv_shows.dart';
 import '../response/api_response.dart';
-import '../videos.dart';
 
 typedef SessionIdsProvider = String? Function();
+typedef IsoCountryCodeProvider = Map<String, String?> Function();
 
 abstract class TmdbClient{
   SessionIdsProvider? sessionIdsProvider;
+  IsoCountryCodeProvider? isoCountryCodeProvider;
 
   setSessionIdsProvider(SessionIdsProvider provider) {
     sessionIdsProvider = provider;
   }
 
+  setIsoCountryCodeProvider(IsoCountryCodeProvider provider){
+    isoCountryCodeProvider = provider;
+  }
+
   Future<Result<ApiResponse<Trending>>> fetchTrending(String timeWindow);
-  Future<Result<ApiResponse<Movies>>> fetchPopularMovies(int page);
-  Future<Result<ApiResponse<TvShows>>> fetchPopularTvShows(int page);
+  Future<Result<ApiResponse<Movies>>> fetchMovies(int page, String filter);
+  Future<Result<ApiResponse<TvShows>>> fetchTvShows(int page, String filter);
   Future<Result<ApiResponse<People>>> fetchPeople(int page);
   Future<ApiResponseGenre> fetchMovieGenre();
   Future<ApiResponseGenre> fetchTvShowsGenre();
   Future<Result<AccountDetails>> fetchAccountDetails(String sessionId);
+  Future<Result<DetailsMovies>> fetchMovieDetails(int id);
+  Future<Result<DetailsTvShows>> fetchTvShowsDetails(int id);
+  Future<Result<DetailsPeople>> fetchPeopleDetails(int id);
   Future<Result<ApiResponse<dynamic>>> fetchSearch(String query, int page);
   Future<ApiPostResponse> addToFavourites({
     required String sessionId,

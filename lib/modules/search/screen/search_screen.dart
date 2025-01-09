@@ -1,16 +1,14 @@
 import 'dart:async';
-import 'dart:ui';
 
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
-import 'package:the_movie_databases/data/local/databases/entity/movies.dart';
+import 'package:provider/provider.dart';
+import 'package:shimmer/shimmer.dart';
 import 'package:the_movie_databases/modules/search/view_model/search_view_model.dart';
 
-import '../../../config/routes.dart';
-import '../../../data/local/databases/entity/people.dart';
-import '../../../data/local/databases/entity/tv_shows.dart';
+import '../../details/screen/details_screen.dart';
+import '../../details/view_model/details_view_model.dart';
 
-const Duration getAPIDuration = Duration(seconds: 1);
+const Duration getAPIDuration = Duration(seconds: 2);
 const Duration debounceDuration = Duration(milliseconds: 500);
 
 class SearchScreen extends StatefulWidget {
@@ -30,15 +28,14 @@ class _SearchScreenState extends State<SearchScreen>
 
   late double imageCardHeight;
   late double cardHeight;
+  late double backDropHeight;
+  late double screenHeight;
 
   late final _Debounceable _debouncedSearch;
 
   String? _currentQuery;
-  bool _isCurrentRoute = false;
 
-  static const String _searchResultsKey = 'search_results';
-
-  Future<Iterable<dynamic>?> _search(String query) async {
+  Future<List<Map<String, String>>?> _suggestion(String query) async {
     if (query.isEmpty) {
       setState(() {
         widget.viewModel.clearResults();
@@ -47,7 +44,7 @@ class _SearchScreenState extends State<SearchScreen>
     }
 
     _currentQuery = query;
-    final options = await widget.viewModel.search(query);
+    final options = await widget.viewModel.suggestion(query);
 
     widget.viewModel.setQuery(query);
 
@@ -60,6 +57,7 @@ class _SearchScreenState extends State<SearchScreen>
   }
 
   void _onSuggestionSelected(dynamic suggestion) {
+    widget.viewModel.clearResults();
     final query = suggestion['name'] as String;
     _searchController.text = query;
     widget.viewModel.search(query);
@@ -71,58 +69,22 @@ class _SearchScreenState extends State<SearchScreen>
   @override
   void initState() {
     super.initState();
-    _debouncedSearch = _debounce(_search);
+    _debouncedSearch = _debounce(_suggestion);
     _setupScrollListener();
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _restoreState();
-    });
-  }
-
-  void _restoreState() {
-    final savedState =
-        _bucket.readState(context, identifier: _searchResultsKey);
-    if (savedState != null) {
-      final savedQuery = savedState['query'] as String?;
-      final savedResults = savedState['results'] as List<dynamic>?;
-      final lastQuery = savedState['lastQuery'] as String?;
-
-      if (savedQuery != null) {
-        setState(() {
-          _searchController.text = savedQuery;
-          if (savedResults != null) {
-            widget.viewModel.restoreSearchResults(savedResults);
-          }
-          if (lastQuery != null) {
-            widget.viewModel.setQuery(lastQuery);
-          }
-        });
-      }
-    }
-  }
-
-  void _saveCurrentState() {
-    if (_searchController.text.isNotEmpty) {
-      _bucket.writeState(
-        context,
-        {
-          'query': _searchController.text,
-          'results': widget.viewModel.searchResults,
-          'lastQuery': widget.viewModel.lastQuery,
-        },
-        identifier: _searchResultsKey,
-      );
-    }
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
 
-    cardHeight = MediaQuery.of(context).size.height * 0.4;
-    imageCardHeight = cardHeight * 0.8;
+    screenHeight = MediaQuery.of(context).size.height;
 
-    _isCurrentRoute = ModalRoute.of(context)?.isCurrent ?? false;
+    cardHeight =
+        screenHeight * 0.15; // 15% of the screen height for card height
+    backDropHeight = cardHeight * 1; // 40% for the backdrop
+    imageCardHeight = cardHeight * 0.95; // 30% for the image card
+
+    setState(() {});
   }
 
   void _setupScrollListener() {
@@ -140,10 +102,6 @@ class _SearchScreenState extends State<SearchScreen>
     return ListenableBuilder(
       listenable: widget.viewModel,
       builder: (context, child) {
-        if (widget.viewModel.lastQuery.isNotEmpty &&
-            _searchController.text.isEmpty) {
-          _searchController.text = widget.viewModel.lastQuery;
-        }
 
         return Scaffold(
           body: SafeArea(
@@ -151,71 +109,53 @@ class _SearchScreenState extends State<SearchScreen>
               padding: const EdgeInsets.all(16.0),
               child: Column(
                 children: [
-                  SearchAnchor(
-                    searchController: _searchController,
-                    builder: (context, controller) {
-                      return SearchBar(
-                        controller: _searchController,
-                        elevation: WidgetStateProperty.all(0),
-                        backgroundColor: WidgetStateProperty.all(
-                          Theme.of(context).canvasColor,
-                        ),
-                        shadowColor:
-                            WidgetStateProperty.all(Colors.transparent),
-                        padding: WidgetStateProperty.all(
-                          const EdgeInsets.symmetric(horizontal: 8.0),
-                        ),
-                        shape: WidgetStateProperty.all(
-                          RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16.0),
-                            side: BorderSide(
-                              color: Theme.of(context).colorScheme.primary,
-                              width: 2,
-                            ),
-                          ),
-                        ),
-                        hintText: "Search movies, TV shows, or people...",
-                        leading: const Icon(Icons.search),
-                        trailing: [
-                          if (_searchController.text.isNotEmpty)
-                            IconButton(
-                              icon: const Icon(Icons.clear),
-                              onPressed: () {
-                                _searchController.clear();
-                                widget.viewModel.clearResults();
-                              },
-                            ),
-                        ],
-                        onSubmitted: (value) {
-                          if (value.isNotEmpty) {
-                            widget.viewModel.search(value);
-                          }
-                        },
-                        onChanged: (value) {
-                          if (value.isNotEmpty) {
-                            _debouncedSearch(value);
-                          }
-                        },
-                      );
-                    },
-                    suggestionsBuilder: (context, controller) async {
-                      final options = await _debouncedSearch(controller.text);
-                      return options
-                              ?.map((option) => ListTile(
-                                    leading: _getSuggestionIcon(
-                                        option['media_type'] as String?),
-                                    title: Text(option['name'] as String),
-                                    subtitle: Text(option['media_type']
-                                            ?.toString()
-                                            .toUpperCase() ??
-                                        ''),
-                                    onTap: () => _onSuggestionSelected(option),
-                                  ))
-                              .toList() ??
-                          [];
-                    },
+                SearchBar(
+                controller: _searchController,
+                elevation: WidgetStateProperty.all(0),
+                backgroundColor: WidgetStateProperty.all(
+                  Theme.of(context).canvasColor,
+                ),
+                shadowColor:
+                WidgetStateProperty.all(Colors.transparent),
+                padding: WidgetStateProperty.all(
+                  const EdgeInsets.symmetric(horizontal: 8.0),
+                ),
+                shape: WidgetStateProperty.all(
+                  RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(100),
+                    side: BorderSide(
+                      color: Theme.of(context).brightness == Brightness.light
+                ? Theme.of(context).colorScheme.primary
+                : Theme.of(context).colorScheme.secondary,
+                      width: 2,
+                    ),
                   ),
-                  const SizedBox(height: 16),
+                ),
+                hintText: "Search movies, TV shows, or people...",
+                leading: Icon(Icons.search, color: Theme.of(context).brightness == Brightness.light
+                ? Theme.of(context).colorScheme.primary
+                : Theme.of(context).colorScheme.secondary,),
+                trailing: [
+                  if (_searchController.text.isNotEmpty)
+                    IconButton(
+                      icon: const Icon(Icons.clear),
+                      onPressed: () {
+                        _searchController.clear();
+                        widget.viewModel.clearResults();
+                      },
+                    ),
+                ],
+                onSubmitted: (value) {
+                  widget.viewModel.clearResults();
+                  if (value.isNotEmpty) {
+                    widget.viewModel.search(value);
+                  }
+                },
+                onChanged: (value) {
+                  _debouncedSearch(value);
+                },
+              ),
+                const SizedBox(height: 16),
                   Expanded(
                     child: PageStorage(
                       bucket: _bucket,
@@ -231,7 +171,6 @@ class _SearchScreenState extends State<SearchScreen>
     );
   }
 
-  // Helper method to get appropriate icons for suggestions
   Widget _getSuggestionIcon(String? mediaType) {
     switch (mediaType) {
       case 'movie':
@@ -246,27 +185,69 @@ class _SearchScreenState extends State<SearchScreen>
   }
 
   Widget _buildSearchResults() {
-    print('Building search results:');
-    print('Results length: ${widget.viewModel.searchResults.length}');
-    print('Query: ${widget.viewModel.query}');
-    print('Is Loading: ${widget.viewModel.isLoading}');
+    if(widget.viewModel.suggestionResults.isNotEmpty){
+      final suggestions = widget.viewModel.suggestionResults;
+      final topMatches = <Map<String, String>>[];
+      final restSuggestions = <Map<String, String>>[];
+
+      for (var item in suggestions) {
+        if (['movie', 'tv', 'person'].contains(item['media_type']) &&
+            topMatches.length < 3) {
+          topMatches.add(item);
+        } else {
+          restSuggestions.add(item);
+        }
+      }
+
+      if (topMatches.isEmpty && _searchController.text.isNotEmpty) {
+        topMatches.add({
+          'name': _searchController.text,
+          'media_type': 'search',
+        });
+      }
+
+      final displaySuggestions = [...topMatches, ...restSuggestions];
+
+      return ListView.builder(
+        itemCount: widget.viewModel.suggestionResults.length,
+        itemBuilder: (context, index) {
+          final suggestion = displaySuggestions[index];
+          final icon = index < topMatches.length
+              ? _getSuggestionIcon(suggestion['media_type'])
+              : const Icon(Icons.search);
+
+          return ListTile(
+            leading: icon,
+            title: Text(suggestion['name'] ?? ''),
+            subtitle: Text(
+              suggestion['media_type']?.toUpperCase() ?? '',
+            ),
+            onTap: () => _onSuggestionSelected(suggestion),
+          );
+        },
+      );
+    }
 
     if (widget.viewModel.isLoading && widget.viewModel.searchResults.isEmpty) {
       return const Center(child: CircularProgressIndicator());
     }
 
     if (widget.viewModel.searchResults.isEmpty &&
-        widget.viewModel.query.isNotEmpty) {
+        _searchController.text.isNotEmpty) {
       return const Center(child: Text('No results found'));
     }
 
     if (widget.viewModel.query.isEmpty) {
       return const Center(
-        child: Text('Try searching with human word '),
+        child: Text('Try searching with human word.'),
       );
     }
 
-    _saveCurrentState();
+    if (_searchController.text.isEmpty) {
+      return const Center(
+        child: Text('Try searching with human word.'),
+      );
+    }
 
     return PageStorage(
       bucket: _bucket,
@@ -289,16 +270,43 @@ class _SearchScreenState extends State<SearchScreen>
           final mediaType = item['media_type'] as String?;
 
           if (mediaType == 'movie') {
-            return movieCard(
-              movie: widget.viewModel.convertToMovie(item),
+            return buildCard(
+              context: context,
+              data: widget.viewModel.convertToMovie(item),
+              title: widget.viewModel.convertToMovie(item).title,
+              releaseDate: widget.viewModel.convertToMovie(item).releaseDate,
+              overview: widget.viewModel.convertToMovie(item).overview,
+              posterPath: widget.viewModel.convertToMovie(item).posterPath,
+              backdropPath: widget.viewModel.convertToMovie(item).backdropPath,
             );
           } else if (mediaType == 'tv') {
-            return tvShowCard(
-              tvShow: widget.viewModel.convertToTvShow(item),
+            return buildCard(
+              context: context,
+              data: widget.viewModel.convertToTvShow(item),
+              title: widget.viewModel.convertToTvShow(item).name,
+              releaseDate: widget.viewModel.convertToTvShow(item).firstAirDate,
+              overview: widget.viewModel.convertToTvShow(item).overview,
+              posterPath: widget.viewModel.convertToTvShow(item).posterPath,
+              backdropPath: widget.viewModel.convertToTvShow(item).backdropPath,
             );
           } else if (mediaType == 'person') {
-            return personCard(
-              person: widget.viewModel.convertToPerson(item),
+            final person = widget.viewModel.convertToPerson(item);
+            final gender = person.gender == 0
+                ? 'Undefined'
+                : person.gender == 1
+                    ? 'Female'
+                    : person.gender == 2
+                        ? 'Male'
+                        : 'Other';
+
+            return buildCard(
+              context: context,
+              data: widget.viewModel.convertToPerson(item),
+              title: widget.viewModel.convertToPerson(item).name,
+              releaseDate: widget.viewModel.convertToPerson(item).originalName,
+              overview: gender,
+              posterPath: widget.viewModel.convertToPerson(item).profilePath,
+              backdropPath: widget.viewModel.convertToPerson(item).profilePath,
             );
           }
           return const SizedBox.shrink();
@@ -307,273 +315,135 @@ class _SearchScreenState extends State<SearchScreen>
     );
   }
 
-  Widget movieCard({required Movies movie}) {
+  Widget buildCard({
+    required BuildContext context,
+    required dynamic data,
+    required String title,
+    required String releaseDate,
+    required String overview,
+    required String posterPath,
+    required String backdropPath,
+  }) {
     return Card(
-      color: Theme.of(context).canvasColor,
       clipBehavior: Clip.antiAliasWithSaveLayer,
       elevation: 2,
       child: InkWell(
         onTap: () {
-          context.push(Routes.detail, extra: movie);
+          final viewModel = DetailsViewModel(
+              detailsRepository: context.read(),
+              favouritesRepository: context.read(),
+              sharedPreferencesService: context.read());
+          Navigator.push(context, MaterialPageRoute(builder: (context) {
+            return DetailsScreen(data: data, viewModel: viewModel);
+          }));
         },
-        child: Column(
-          children: [
-            ClipRRect(
-              borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(16.0)),
-              child: Image.network(
-                'https://image.tmdb.org/t/p/w500${movie.backdropPath}',
-                fit: BoxFit.cover,
-                height: imageCardHeight, // Adjust the height as needed
-                width: double.infinity,
-                errorBuilder: (BuildContext context, Object error,
-                    StackTrace? stackTrace) {
-                  return Container(
-                    color: Colors
-                        .grey[300], // Background color for the error container
-                    alignment: Alignment.center,
-                    child: const Icon(
-                      Icons.error_outline, // Icon indicating an error
-                      color: Colors.red,
-                      size: 50,
-                    ),
-                  );
-                },
-              ),
-            ),
-            // Bottom section with details
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Poster image
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(8.0),
-                    child: Image.network(
-                      'https://image.tmdb.org/t/p/w500${movie.posterPath}',
-                      fit: BoxFit.cover,
-                      width: 60,
-                      height: 90,
-                      errorBuilder: (BuildContext context, Object error,
-                          StackTrace? stackTrace) {
-                        return Container(
-                          color: Colors.grey[
-                              300], // Background color for the error container
-                          alignment: Alignment.center,
-                          child: const Icon(
-                            Icons.error_outline, // Icon indicating an error
-                            color: Colors.red,
-                            size: 50,
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  // Movie details
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          movie.title,
-                          style: Theme.of(context).textTheme.titleMedium,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          movie.releaseDate,
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          movie.overview,
-                          maxLines: 3,
-                          overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget tvShowCard({required TvShows tvShow}) {
-    return Card(
-      clipBehavior: Clip.antiAliasWithSaveLayer,
-      elevation: 0,
-      child: InkWell(
-        onTap: () {
-          context.push(Routes.detail, extra: tvShow);
-        },
-        child: Stack(
-          children: [
-            Positioned.fill(
-              child: Image.network(
-                'https://image.tmdb.org/t/p/w500${tvShow.posterPath}',
-                fit: BoxFit.cover,
-                height: imageCardHeight,
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    width: 100, // Fixed width for poster
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(8.0),
-                      border: Border.all(
-                        color: Theme.of(context).canvasColor,
-                        width: 3,
-                      ),
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(6.0),
-                      child: Image.network(
-                        'https://image.tmdb.org/t/p/w500${tvShow.posterPath}',
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          tvShow.name,
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                        const SizedBox(height: 4),
-                        Text(tvShow.firstAirDate),
-                        const SizedBox(height: 8),
-                        Text(
-                          tvShow.overview,
-                          maxLines: 3,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget personCard({required People person}) {
-    return Card(
-      clipBehavior: Clip.antiAliasWithSaveLayer,
-      elevation: 0,
-      child: InkWell(
-        onTap: () {
-          context.push(Routes.detail, extra: person);
-        },
-        child: Stack(
-          children: [
-            Positioned.fill(
-              child: Stack(
+        child: Container(
+          margin: const EdgeInsets.only(bottom: 16.0),
+          child: Stack(
+            children: [
+              Column(
+                mainAxisAlignment: MainAxisAlignment.start,
                 children: [
                   Image.network(
-                    'https://image.tmdb.org/t/p/w500${person.profilePath}',
-                    fit: BoxFit.fitWidth,
-                    height: imageCardHeight,
+                    'https://image.tmdb.org/t/p/w500$backdropPath',
+                    fit: BoxFit.cover,
                     width: double.infinity,
-                    errorBuilder: (BuildContext context, Object error,
-                        StackTrace? stackTrace) {
-                      return Container(
-                        color: Colors.grey[
-                            300], // Background color for the error container
-                        alignment: Alignment.center,
-                        child: const Icon(
-                          Icons.error_outline, // Icon indicating an error
-                          color: Colors.red,
-                          size: 50,
+                    height: backDropHeight,
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) {
+                        return child; // Image has finished loading
+                      }
+                      return Shimmer.fromColors(
+                        baseColor: Colors.grey[300]!,
+                        highlightColor: Colors.grey[100]!,
+                        child: Container(
+                          height: backDropHeight,
+                          width: double.infinity,
+                          color: Colors.grey,
                         ),
                       );
                     },
+                    errorBuilder: (context, error, stackTrace) => Container(
+                      height: backDropHeight,
+                      width: double.infinity,
+                      color: Colors.grey,
+                      child: const Icon(Icons.error, color: Colors.white),
+                    ),
                   ),
-                  BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-                    child: Container(
-                      color: Colors.black.withOpacity(0),
+                  SizedBox(height: imageCardHeight / 2),
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.symmetric(horizontal: 16.0),
+                    child: Text(
+                      title,
+                      textAlign: TextAlign.start,
+                      overflow: TextOverflow.fade,
+                      style: const TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 16.0),
+                    width: double.infinity,
+                    child: Text(
+                      releaseDate,
+                      textAlign: TextAlign.start,
+                      style: const TextStyle(
+                          fontSize: 12, fontWeight: FontWeight.w200),
+                    ),
+                  ),
+                  Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 16.0),
+                    width: double.infinity,
+                    child: Text(
+                      overview,
+                      textAlign: TextAlign.start,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 12),
                     ),
                   ),
                 ],
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    width: 100, // Fixed width for poster
+              Positioned.fill(
+                left: 16,
+                top: -imageCardHeight / 2,
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Container(
+                    height: imageCardHeight + 16,
+                    clipBehavior: Clip.antiAliasWithSaveLayer,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(8.0),
-                      border: Border.all(
-                        color: Theme.of(context).canvasColor,
-                        width: 3,
-                      ),
                     ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(6.0),
+                    child: AspectRatio(
+                      aspectRatio: 2 / 3,
                       child: Image.network(
-                        'https://image.tmdb.org/t/p/w500${person.profilePath}',
+                        'https://image.tmdb.org/t/p/w500$posterPath',
                         fit: BoxFit.cover,
-                        errorBuilder: (BuildContext context, Object error,
-                            StackTrace? stackTrace) {
-                          return Container(
-                            color: Colors.grey[
-                                300], // Background color for the error container
-                            alignment: Alignment.center,
-                            child: const Icon(
-                              Icons.error_outline, // Icon indicating an error
-                              color: Colors.red,
-                              size: 50,
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) {
+                            return child; // Image has finished loading
+                          }
+                          return Shimmer.fromColors(
+                            baseColor: Colors.grey[300]!,
+                            highlightColor: Colors.grey[100]!,
+                            child: Container(
+                              color: Colors.grey,
                             ),
                           );
                         },
+                        errorBuilder: (context, error, stackTrace) => Container(
+                          color: Colors.grey,
+                          child: const Icon(Icons.error, color: Colors.white),
+                        ),
                       ),
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          person.name,
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                        const SizedBox(height: 4),
-                        Text(person.gender == 1 ? 'Female' : 'Male'),
-                        const SizedBox(height: 8),
-                        Text(
-                          person.knownForDepartment,
-                          maxLines: 3,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -581,16 +451,15 @@ class _SearchScreenState extends State<SearchScreen>
 
   @override
   void dispose() {
-    _saveCurrentState(); // Save state before disposing
     _scrollController.dispose();
     _searchController.dispose();
     super.dispose();
   }
 }
 
-typedef _Debounceable = Future<Iterable<dynamic>?> Function(String parameter);
+typedef _Debounceable = Future<List<Map<String, String>>?> Function(String parameter);
 
-_Debounceable _debounce(Future<Iterable<dynamic>?> Function(String) function) {
+_Debounceable _debounce(Future<List<Map<String, String>>?> Function(String) function) {
   _DebounceTimer? debounceTimer;
 
   return (String parameter) async {

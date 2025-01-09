@@ -11,9 +11,17 @@ import '../data/repositories/auth/auth_repository.dart';
 import '../utils/result.dart';
 import '../utils/theme_provider.dart';
 
-class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
-  CustomAppBar({super.key});
+class CustomAppBar extends StatefulWidget implements PreferredSizeWidget {
+  const CustomAppBar({super.key});
 
+  @override
+  State<CustomAppBar> createState() => _CustomAppBarState();
+
+  @override
+  Size get preferredSize => const Size.fromHeight(70);
+}
+
+class _CustomAppBarState extends State<CustomAppBar> {
   @override
   Widget build(BuildContext context) {
     return AppBar(
@@ -34,6 +42,89 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
           _onProfileClicked(context);
         })
       ],
+      title: _buildTitle(context),
+    );
+  }
+
+  Future<String?>? _countryNameTitle;
+
+  Future<String?> _fetchUserLocation(BuildContext context) async {
+    final authRepository = context.read<AuthRepository>();
+    final region = authRepository.region;
+
+    if (region != null) {
+      final Map<String, String?> locationData = region;
+      final countryName = locationData.keys.first;
+      print('Country name fetched from provider: $countryName');
+      return countryName;
+    } else {
+      print('isoCountryCodeProvider is null.');
+      return null;
+    }
+  }
+
+  Widget _buildTitle(BuildContext context) {
+    _countryNameTitle ??= _fetchUserLocation(context);
+
+    return FutureBuilder<String?>(
+      future: _countryNameTitle,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return SafeArea(
+            child: Row(
+              children: [
+                Text(
+                  'Fetching location...',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+              ],
+            ),
+          );
+        } else if (snapshot.hasError) {
+          return SafeArea(
+            child: Row(
+              children: [
+                Column(
+                  children: [
+                    Text(
+                      'Error fetching location',
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                    TextButton(
+                        onPressed: () async {
+                          _fetchUserLocation(context);
+                        },
+                        child: Text('retry'))
+                  ],
+                ),
+              ],
+            ),
+          );
+        } else {
+          final userLocation = snapshot.data ?? '';
+          return SafeArea(
+            child: Row(
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      userLocation.isNotEmpty ? 'Location' : '',
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                    Text(
+                      userLocation,
+                      style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          );
+        }
+      },
     );
   }
 
@@ -114,14 +205,12 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
       if (accountDetails.avatar.tmdb?.avatarPath?.isNotEmpty == true) {
         final tmdbUrl =
             'https://image.tmdb.org/t/p/w500${accountDetails.avatar.tmdb!.avatarPath}';
-        print('Using TMDB URL: $tmdbUrl');
         return tmdbUrl;
       }
 
       if (accountDetails.avatar.gravatar.hash.isNotEmpty) {
         final gravatarUrl =
             'https://www.gravatar.com/avatar/${accountDetails.avatar.gravatar.hash}';
-        print('Using Gravatar URL: $gravatarUrl');
         return gravatarUrl;
       }
     }
@@ -179,39 +268,38 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     });
   }
 
-  void _handleMenuSelection(String value, BuildContext context) {
-    final authState = context.read<AuthRepository>().authState;
-    switch (value) {
-      case 'Profile':
-        if (authState.isAuthenticated) {
-          context.push(Routes.profile);
-        } else {
-          showDialog(
-            context: context,
-            builder: (context) => AlertDialog(
-              title: const Text('Authentication Required'),
-              content: const Text('Please login to view your profile'),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Ok'),
-                ),
-              ],
-            ),
-          );
-        }
-        break;
-      case 'Settings':
-        context.push(Routes.settings);
-        break;
-      case 'Logout':
-        _handleLogoutPressed(context);
-        break;
+  void _handleMenuSelection(String value, BuildContext context) async {
+    final authState = await context.read<AuthRepository>().authState;
+    if (context.mounted) {
+      switch (value) {
+        case 'Profile':
+          if (authState.isAuthenticated) {
+            context.push(Routes.profile);
+          } else {
+            showDialog(
+              context: context,
+              builder: (context) => AlertDialog(
+                title: const Text('Authentication Required'),
+                content: const Text('Please login to view your profile'),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Ok'),
+                  ),
+                ],
+              ),
+            );
+          }
+          break;
+        case 'Settings':
+          context.push(Routes.settings);
+          break;
+        case 'Logout':
+          _handleLogoutPressed(context);
+          break;
+      }
     }
   }
-
-  @override
-  Size get preferredSize => const Size.fromHeight(70);
 
   void _handleLogoutPressed(BuildContext context) async {
     final authRepository = context.read<AuthRepository>();

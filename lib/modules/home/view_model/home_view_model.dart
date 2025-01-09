@@ -12,16 +12,14 @@ import '../../../data/local/databases/entity/people.dart';
 import '../../../data/local/databases/entity/trending.dart';
 import '../../../data/local/databases/entity/tv_shows.dart';
 import '../../../data/network/service/tmdb_client.dart';
-import '../../../data/network/service/tmdb_client_impl.dart';
 import '../../../utils/constant.dart';
 
 
 class HomeViewModel with ChangeNotifier {
-  late final TmdbClient tmdbClient;
+  final TmdbClient _tmdbClient;
 
-  HomeViewModel() {
-    tmdbClient = TmdbClientImpl();
-  }
+  HomeViewModel({required tmdbClient}) : _tmdbClient = tmdbClient;
+
   Result<List<Trending>> trendingState = const Result.ok([]);
   Result<List<Movies>> popularMoviesState = const Result.ok([]);
   Result<List<TvShows>> popularTvShowsState = const Result.ok([]);
@@ -63,7 +61,7 @@ class HomeViewModel with ChangeNotifier {
     _isTrendingLoading = true;
     notifyListeners();
 
-    final response = await tmdbClient.fetchTrending(_selectedTrendingFilter);
+    final response = await _tmdbClient.fetchTrending(_selectedTrendingFilter);
 
     try {
 
@@ -142,7 +140,7 @@ class HomeViewModel with ChangeNotifier {
     notifyListeners();
 
     try {
-      final response = await tmdbClient.fetchPopularMovies(1);
+      final response = await _tmdbClient.fetchMovies(1, Constant.movieFilter[0]['value']!);
 
       if(response is Ok<ApiResponse<Movies>>){
         insertPopularMoviesToDb(response.value.results);
@@ -192,7 +190,7 @@ class HomeViewModel with ChangeNotifier {
     notifyListeners();
 
     try {
-      final response = await tmdbClient.fetchPopularTvShows(1);
+      final response = await _tmdbClient.fetchTvShows(1, Constant.tvFilter[0]['value']!);
 
       if(response is Ok<ApiResponse<TvShows>>){
         insertPopularTvShowsToDb(response.value.results);
@@ -239,7 +237,7 @@ class HomeViewModel with ChangeNotifier {
     notifyListeners();
 
     try {
-      final response = await tmdbClient.fetchPeople(1);
+      final response = await _tmdbClient.fetchPeople(1);
 
       if(response is Ok<ApiResponse<People>>){
         insertPopularPeopleToDb(response.value.results);

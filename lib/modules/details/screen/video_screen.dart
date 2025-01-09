@@ -84,7 +84,6 @@ class _VideoScreenState extends State<VideoScreen> {
                 itemCount: widget.videoKeys.length,
                 onPageChanged: (index) {
                   setState(() {
-                    // Pause previous video
                     _controllers[_currentIndex].pause();
                     _currentIndex = index;
                   });

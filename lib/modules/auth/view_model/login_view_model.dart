@@ -19,12 +19,7 @@ class LoginViewModel {
   void listenToDeepLink({
     required Function(String sessionId) onSessionCreated,
     required Function(Object error) onError,
-    required VoidCallback onTimeout,
   }) {
-    const timeoutDuration = Duration(minutes: 2);
-
-    Timer? timeoutTimer;
-
     _deepLinkSubscription = AppLinks().uriLinkStream.listen(
       (Uri? uri) async {
         if (uri != null) {
@@ -38,19 +33,9 @@ class LoginViewModel {
         }
       },
       onError: (error) {
-        timeoutTimer?.cancel();
         onError(error.toString());
       },
-      onDone: () {
-        timeoutTimer?.cancel();
-        onTimeout();
-      },
     );
-
-    timeoutTimer = Timer(timeoutDuration, () {
-      _deepLinkSubscription?.cancel();
-      onTimeout();
-    });
   }
 
   Future<Result<void>> startTmdbAuth({

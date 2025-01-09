@@ -1,4 +1,4 @@
-class Videos {
+class Video {
   final String iso6391;
   final String iso31661;
   final String name;
@@ -10,7 +10,7 @@ class Videos {
   final DateTime publishedAt;
   final String id;
 
-  Videos({
+  Video({
     required this.iso6391,
     required this.iso31661,
     required this.name,
@@ -23,8 +23,8 @@ class Videos {
     required this.id,
   });
 
-  factory Videos.fromJson(Map<String, dynamic> json) {
-    return Videos(
+  factory Video.fromJson(Map<String, dynamic> json) {
+    return Video(
       iso6391: json['iso_639_1'] as String,
       iso31661: json['iso_3166_1'] as String,
       name: json['name'] as String,

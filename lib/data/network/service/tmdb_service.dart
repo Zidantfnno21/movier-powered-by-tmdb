@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
+import 'package:logging/logging.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../utils/result.dart';
@@ -9,6 +10,7 @@ import '../response/api_response.dart';
 
 final String apiKey = dotenv.env['TMDB_API_KEY'] ?? '';
 const String baseUrl = 'https://api.themoviedb.org/3';
+final _log = Logger('TmdbService');
 
 /// Step by step by TMDB Docs.
 class TmdbService {
@@ -17,11 +19,11 @@ class TmdbService {
     final response = await http.get(Uri.parse('$baseUrl/authentication/token/new?api_key=$apiKey'));
 
     if (response.statusCode == 200) {
-      print('Response: ${response.statusCode}, ${response.body}');
+      _log.info('Response: ${response.statusCode}, ${response.body}');
       final data = jsonDecode(response.body);
       return data['request_token'];
     } else {
-      print('Error: ${response.statusCode}, ${response.body}');
+      _log.warning('Error: ${response.statusCode}, ${response.body}');
       throw Exception('Failed to create request token');
     }
   }
@@ -42,15 +44,15 @@ class TmdbService {
       headers: {'Content-Type': 'application/json'},
     );
     if (response.statusCode == 200) {
-      print('Response: ${response.statusCode}, ${response.body}');
+      _log.info('Response: ${response.statusCode}, ${response.body}');
       final data = jsonDecode(response.body);
       return data['session_id'];
     } else {
-      print('Error: ${response.statusCode}, ${response.body}');
       throw Exception('Failed to create session ID');
     }
   }
 
+  /// Deleting session id from TMDB
   Future<bool> deleteSession(String? sessionId) async {
     if (sessionId == null || sessionId.isEmpty) {
       throw Exception('Session ID is null or empty. Cannot delete session.');
@@ -58,15 +60,15 @@ class TmdbService {
 
     final url = Uri.parse('$baseUrl/authentication/session?api_key=$apiKey');
     try {
-      print('Deleting session with ID: $sessionId');
+      _log.info('Deleting session with ID: $sessionId');
       final response = await http.delete(
         url,
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'session_id': sessionId}),
       );
 
-      print('Response Status: ${response.statusCode}');
-      print('Response Body: ${response.body}');
+      _log.info('Response Status: ${response.statusCode}');
+      _log.info('Response Body: ${response.body}');
 
       if (response.statusCode == 200) {
         final responseBody = jsonDecode(response.body);
@@ -77,7 +79,6 @@ class TmdbService {
         );
       }
     } catch (e) {
-      print('Error occurred while deleting session: $e');
       throw Exception('Error occurred while deleting session: $e');
     }
   }
@@ -87,7 +88,7 @@ class TmdbService {
       final authUrl = 'https://www.themoviedb.org/authenticate/$requestToken?redirect_to=myapp://tmdb.com?approved=true';
       await TmdbService().askUserForPermission(authUrl);
     } catch (e) {
-      print(e);
+      _log.severe(e);
     }
   }
 

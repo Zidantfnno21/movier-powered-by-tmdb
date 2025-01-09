@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:the_movie_databases/data/repositories/tv_shows/tv_shows_repository.dart';
+import 'package:the_movie_databases/utils/constant.dart';
 import 'package:the_movie_databases/utils/result.dart';
 
 import '../../../data/local/databases/entity/tv_shows.dart';
@@ -10,14 +11,25 @@ class TvShowsViewModel with ChangeNotifier {
   }) : _tvShowsRepository = tvShowRepos;
 
   final TvShowsRepository _tvShowsRepository;
+
   List<TvShows> _tvShows = [];
+  String _selectedFilter = Constant.tvFilter[0]['value']!;
   bool _isLoading = false;
   bool _isLoadingMore = false;
+  bool _hasMore = true;
   int _currentPage = 1;
 
   List<TvShows> get tvShows => _tvShows;
+  String get selectedFilter => _selectedFilter;
   bool get isLoading => _isLoading;
   bool get isLoadingMore => _isLoadingMore;
+  bool get hasMore => _hasMore;
+
+  void updateSelectedFilter(String selectedFilter) {
+    _selectedFilter = selectedFilter;
+    notifyListeners();
+    fetchTvShows(isRefresh: true);
+  }
 
   Future<Result<void>> fetchTvShows({bool isRefresh = false}) async {
     if (isRefresh) {
@@ -28,7 +40,7 @@ class TvShowsViewModel with ChangeNotifier {
     _isLoading = true;
     notifyListeners();
 
-    final response = await _tvShowsRepository.fetchTvShows(_currentPage);
+    final response = await _tvShowsRepository.fetchTvShows(_currentPage, _selectedFilter);
 
     if (response is Ok<List<TvShows>>) {
       if (response.value.isNotEmpty) {
@@ -42,14 +54,14 @@ class TvShowsViewModel with ChangeNotifier {
     return response;
   }
 
-  Future<void> loadMoreTvShows() async {
-    if (_isLoadingMore) return;
+  Future<Result<void>> loadMoreTvShows() async {
+    if (!_hasMore || _isLoadingMore) return const Result.ok(null);
 
     _isLoadingMore = true;
     notifyListeners();
 
     final nextPage = _currentPage + 1;
-    final response = await _tvShowsRepository.fetchTvShows(nextPage);
+    final response = await _tvShowsRepository.fetchTvShows(nextPage, _selectedFilter);
 
     if (response is Ok<List<TvShows>>) {
       if (response.value.isNotEmpty) {
@@ -61,12 +73,15 @@ class TvShowsViewModel with ChangeNotifier {
         if (newShows.isNotEmpty) {
           _tvShows.addAll(newShows);
           _currentPage = nextPage;
+        }else if (newShows.isEmpty){
+          _hasMore = false;
         }
       }
     }
 
     _isLoadingMore = false;
     notifyListeners();
+    return response;
   }
 
   void refresh() {

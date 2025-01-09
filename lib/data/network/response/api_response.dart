@@ -1,7 +1,7 @@
 import 'package:json_annotation/json_annotation.dart';
 
 import '../../local/databases/entity/genres.dart';
-import '../videos.dart';
+import '../model/videos/video.dart';
 
 part 'api_response.g.dart';
 
@@ -118,7 +118,7 @@ class ApiResponseGuestSession {
 @JsonSerializable()
 class ApiResponseVideos {
   final int id;
-  final List<Videos> results;
+  final List<Video> results;
 
   ApiResponseVideos({required this.id, required this.results});
 

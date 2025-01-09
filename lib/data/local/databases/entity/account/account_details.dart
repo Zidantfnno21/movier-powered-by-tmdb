@@ -1,3 +1,5 @@
+// ignore_for_file: invalid_annotation_target, unnecessary_lambdas
+
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:the_movie_databases/data/local/databases/entity/account/account.dart';
 
@@ -24,7 +26,7 @@ extension AccountDetailsExtensions on AccountDetails {
   Account toAccount() {
     return Account(
       id: id,
-      name: name ?? '',
+      name: name,
       username: username,
       iso6391: iso6391,
       iso31661: iso31661,

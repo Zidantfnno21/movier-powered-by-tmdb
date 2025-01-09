@@ -104,6 +104,7 @@ class _FavouritesScreenState extends State<FavouritesScreen>
                           Icon(Icons.movie_outlined, size: 48),
                           SizedBox(height: 16),
                           Text(
+                            textAlign: TextAlign.center,
                               'Your Favorites Movies is Empty \nStart Liking Some Movies!'),
                         ],
                       ),

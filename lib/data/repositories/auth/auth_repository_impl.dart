@@ -4,6 +4,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:logging/logging.dart';
 import 'package:the_movie_databases/config/auth_state.dart';
 import 'package:the_movie_databases/data/local/databases/app_databases.dart';
+import 'package:the_movie_databases/data/location_service.dart';
 import 'package:the_movie_databases/data/network/service/tmdb_client.dart';
 import 'package:the_movie_databases/data/network/service/tmdb_service.dart';
 import 'package:the_movie_databases/data/repositories/auth/auth_repository.dart';
@@ -23,6 +24,8 @@ class AuthRepositoryImpl extends ChangeNotifier implements AuthRepository {
         _appDatabase = appDatabase,
         _sharedPreferencesService = sharedPreferencesService {
     _tmdbClient.sessionIdsProvider = _sessionIdsProvider;
+    _tmdbClient.isoCountryCodeProvider = _isoCountryCodeProvider;
+    _initializeAuthState();
   }
 
   final TmdbClient _tmdbClient;
@@ -32,40 +35,54 @@ class AuthRepositoryImpl extends ChangeNotifier implements AuthRepository {
   final _log = Logger('AuthRepository');
 
   String? _sessionId;
-  bool? _isAuth;
+  Map<String, String?> _locationData = {'' : 'US'};
   Timer? _expirationTimer;
-
   AuthState _authState = AuthState.unauthenticated;
 
+  Future<void> _initializeAuthState() async {
+    await _getIsoCountryCodeFromLocation();
+
+    _log.info('Initializing auth state...');
+    await _fetch();
+    final result = await _sharedPreferencesService.fetchAuthState();
+    switch (result) {
+      case Ok<AuthState>():
+        _authState = result.value;
+      case Error<AuthState>():
+        _authState = AuthState.unauthenticated;
+    }
+    _log.info('Auth state initialized: $_authState');
+
+    await _checkGuestSessionExpiration();
+
+    notifyListeners();
+  }
+
+  Future<void> _checkGuestSessionExpiration() async {
+    final expirationDate =
+        await _sharedPreferencesService.fetchGuestExpiredTime();
+    if (expirationDate is Ok<String?>) {
+      _setupExpirationTimer(expirationDate.value!);
+    }
+  }
+
   @override
-  AuthState get authState => _authState;
+  Future<AuthState> get authState async => _authState;
 
   @override
   String? get sessionId => _sessionId;
 
   @override
-  Future<bool> get isAuth async {
-    if (_isAuth != null) {
-      return _isAuth!;
-    }
-
-    await _fetch();
-    return _isAuth ?? false;
-  }
-
-  
+  Map<String, String?> get region => _locationData;
 
   Future<void> _fetch() async {
     final result = await _sharedPreferencesService.fetchSessionId();
     switch (result) {
       case Ok<String?>():
         _sessionId = result.value;
-        _isAuth = _sessionId != null;
         notifyListeners();
       case Error<String?>():
-        _log.severe(
-            'Failed to fetch Token from SharedPreferences', result.error);
-        _isAuth = false;
+        _sessionId = null;
         notifyListeners();
     }
   }
@@ -76,7 +93,6 @@ class AuthRepositoryImpl extends ChangeNotifier implements AuthRepository {
       final sessionId = await _tmdbService.createSessionId(requestToken);
       _sessionId = sessionId;
       await _sharedPreferencesService.saveSessionId(sessionId);
-      _isAuth = true;
       _authState = AuthState.authenticated;
       notifyListeners();
       return const Result.ok(null);
@@ -90,14 +106,24 @@ class AuthRepositoryImpl extends ChangeNotifier implements AuthRepository {
   @override
   Future<Result<void>> logOut() async {
     try {
+      if (_authState == AuthState.guestSession) {
+        await _sharedPreferencesService.saveSessionId(null);
+        _expirationTimer?.cancel();
+        await _sharedPreferencesService.saveGuestExpiredTime(null);
+        await _clearData();
+        _authState = AuthState.unauthenticated;
+        notifyListeners();
+        return const Result.ok(null);
+      }
+
       final success = await _tmdbService.deleteSession(_sessionId);
       if (success) {
         _sessionId = null;
-        _isAuth = false;
         _authState = AuthState.unauthenticated;
         await _sharedPreferencesService.saveSessionId(_sessionId);
         await _sharedPreferencesService.saveAccountId(0);
         await _clearData();
+        await _sharedPreferencesService.saveAuthState(_authState);
         _expirationTimer?.cancel();
         notifyListeners();
         return const Result.ok(null);
@@ -137,11 +163,12 @@ class AuthRepositoryImpl extends ChangeNotifier implements AuthRepository {
         final guestSessionData = guestSession.value;
         _sessionId = guestSessionData.guestSessionId;
         await _sharedPreferencesService.saveSessionId(_sessionId);
-        _isAuth = true;
         _authState = AuthState.guestSession;
+        await _sharedPreferencesService.saveAuthState(_authState);
 
-        final test = DateTime.now().toUtc().add(const Duration(seconds: 1000));
-        _setupExpirationTimer(test.toString());
+        await _sharedPreferencesService
+            .saveGuestExpiredTime(guestSessionData.expiresAt);
+        _setupExpirationTimer(guestSessionData.expiresAt);
 
         notifyListeners();
         return const Result.ok(null);
@@ -155,7 +182,9 @@ class AuthRepositoryImpl extends ChangeNotifier implements AuthRepository {
 
   Future<void> _setupExpirationTimer(String expiresAt) async {
     final now = DateTime.now().toUtc();
-    final expiresAtConverted = DateTime.parse(expiresAt);
+    final formattedExpiresAt = expiresAt.replaceAll(' UTC', 'Z');
+    final expiresAtConverted = DateTime.parse(formattedExpiresAt);
+
     final timeUntilExpiration = expiresAtConverted.difference(now);
 
     _log.info('Current time (UTC): $now');
@@ -167,8 +196,8 @@ class AuthRepositoryImpl extends ChangeNotifier implements AuthRepository {
 
     if (timeUntilExpiration.isNegative) {
       _log.warning('Session already expired!');
-      _isAuth = false;
       _authState = AuthState.unauthenticated;
+      await _sharedPreferencesService.saveAuthState(_authState);
       await _sharedPreferencesService.saveSessionId(null);
       await _sharedPreferencesService.saveAccountId(0);
       await _clearData();
@@ -177,8 +206,8 @@ class AuthRepositoryImpl extends ChangeNotifier implements AuthRepository {
       _log.info('Setting timer for auto-logout');
       _expirationTimer = Timer(timeUntilExpiration, () async {
         _log.info('Session expired - logging out');
-        _isAuth = false;
         _authState = AuthState.unauthenticated;
+        await _sharedPreferencesService.saveAuthState(_authState);
         await _sharedPreferencesService.saveSessionId(null);
         await _sharedPreferencesService.saveAccountId(0);
         await _clearData();
@@ -187,8 +216,20 @@ class AuthRepositoryImpl extends ChangeNotifier implements AuthRepository {
     }
   }
 
-  String? _sessionIdsProvider() =>
-      _sessionId != null ? 'session_id=$_sessionId' : null;
+  Future<Result<void>> _getIsoCountryCodeFromLocation() async {
+    final result = await LocationService().getLocationToIso31661();
+    if (result is Ok<Map<String, String?>>) {
+      _locationData = result.value;
+      _log.info('countryCode fetched from service $_locationData');
+      notifyListeners();
+      return const Result.ok(null);
+    }
+    return Result.error(Exception('fail to get iso country code'));
+  }
+
+  String? _sessionIdsProvider() => _sessionId;
+
+  Map<String, String?> _isoCountryCodeProvider() => _locationData;
 
   final List<VoidCallback> _listeners = [];
 

@@ -22,11 +22,13 @@ class ThemeProvider with ChangeNotifier {
         final newTheme = getActualTheme(mode.value);
         if (newTheme != _themeMode) {
           _themeMode = newTheme;
-          notifyListeners();
         }
       }
     } catch (e) {
+      _themeMode = ThemeMode.system;
       _log.warning('Error load theme');
+    }finally{
+      notifyListeners();
     }
   }
 

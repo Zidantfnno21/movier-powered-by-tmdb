@@ -5,7 +5,7 @@ import '../config/auth_state.dart';
 
 extension AuthContextExtension on BuildContext {
   AuthRepository get auth => read<AuthRepository>();
-  AuthState get authState => watch<AuthRepository>().authState;
+  Future<AuthState> get authState => watch<AuthRepository>().authState;
 
   bool get isAuthenticated => read<AuthRepository>().authState == AuthState.authenticated;
   bool get isGuest => read<AuthRepository>().authState == AuthState.guestSession;

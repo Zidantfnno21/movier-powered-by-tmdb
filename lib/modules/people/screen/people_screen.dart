@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:the_movie_databases/data/local/databases/entity/people.dart';
 import 'package:the_movie_databases/modules/people/view_model/people_view_model.dart';
+import 'package:the_movie_databases/widgets/scroll_aware_fab.dart';
 
 import '../../../config/routes.dart';
-import '../../../widgets/rate_widget.dart';
 
 class PeopleScreen extends StatefulWidget {
   const PeopleScreen({super.key, required this.viewModel});
@@ -39,7 +39,7 @@ class _PeopleScreenState extends State<PeopleScreen> {
     final threshold = maxExtent * 0.8;
 
     if (pixels >= threshold) {
-      if (!widget.viewModel.isLoadingMore) {
+      if (!widget.viewModel.isLoadingMore && widget.viewModel.hasMore) {
         print('Loading more people...');
         widget.viewModel.loadMorePeople();
       }
@@ -48,63 +48,104 @@ class _PeopleScreenState extends State<PeopleScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return ListenableBuilder(
-      listenable: widget.viewModel,
-      builder: (context, child) {
-        if (widget.viewModel.isLoading) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        if (widget.viewModel.people.isEmpty) {
-          return const Center(child: Text("No data available"));
-        }
-
-        return CustomScrollView(
-          controller: _scrollController,
-          physics: const AlwaysScrollableScrollPhysics(),
-          slivers: [
-            SliverPadding(
-              padding: const EdgeInsets.all(16),
-              sliver: SliverList(
-                delegate: SliverChildListDelegate([
-                  _buildSectionTitle(
-                    context,
-                    "People",
-                  ),
-                ]),
-              ),
-            ),
-            SliverPadding(
-              padding: const EdgeInsets.all(16),
-              sliver: SliverGrid(
-                delegate: SliverChildBuilderDelegate(
-                      (context, index) {
-                    final people = widget.viewModel.people[index];
-                    final String title = people.name;
-                    final String imagePath = 'https://image.tmdb.org/t/p/w500${people.profilePath}';
-                    final double rating = people.popularity;
-                    final String releaseDate = people.originalName;
-
-                    return Padding(
-                      padding: EdgeInsets.zero,
-                      child: IntrinsicHeight(
-                        child: _buildCard(title, imagePath, rating, releaseDate, people),
+    return Scaffold(
+      body: RefreshIndicator(
+        onRefresh: () async {
+          widget.viewModel.refreshPeople();
+        },
+        child: ListenableBuilder(
+          listenable: widget.viewModel,
+          builder: (context, child) {
+            return CustomScrollView(
+              controller: _scrollController,
+              physics: const AlwaysScrollableScrollPhysics(),
+              slivers: [
+                SliverPadding(
+                  padding: const EdgeInsets.all(16),
+                  sliver: SliverList(
+                    delegate: SliverChildListDelegate([
+                      _buildSectionTitle(
+                        context,
+                        "People",
                       ),
-                    );
-                  },
-                  childCount: widget.viewModel.people.length,
+                    ]),
+                  ),
                 ),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 8,
-                  mainAxisSpacing: 12,
-                  childAspectRatio: 0.5,
+                SliverPadding(
+                  padding: const EdgeInsets.all(16),
+                  sliver: SliverGrid(
+                    delegate: SliverChildBuilderDelegate(
+                          (context, index) {
+                        final people = widget.viewModel.people[index];
+                        final String title = people.name;
+                        final String imagePath = 'https://image.tmdb.org/t/p/w500${people.profilePath}';
+                        final double rating = people.popularity;
+                        final String releaseDate = people.originalName;
+
+                        return Padding(
+                          padding: EdgeInsets.zero,
+                          child: IntrinsicHeight(
+                            child: _buildCard(title, imagePath, rating, releaseDate, people),
+                          ),
+                        );
+                      },
+                      childCount: widget.viewModel.people.length,
+                    ),
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 8,
+                      mainAxisSpacing: 12,
+                      childAspectRatio: 0.5,
+                    ),
+                  ),
                 ),
-              ),
-            ),
-          ],
-        );
-      },
+                SliverToBoxAdapter(
+                  child: Visibility(
+                    visible: widget.viewModel.isLoadingMore,
+                    child: const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 8.0),
+                      child: Column(
+                        children: [
+                          CircularProgressIndicator(),
+                          SizedBox(
+                            height: 4.0,
+                          ),
+                          Text('Loading...'),
+                          SizedBox(
+                            height: 8.0,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                SliverToBoxAdapter(
+                  child: Visibility(
+                    visible: !widget.viewModel.hasMore,
+                    child: const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 8.0),
+                      child: Column(
+                        children: [
+                          SizedBox(
+                            height: 4.0,
+                          ),
+                          Text('Yay!, You reach the bottom!🎊🎉'),
+                          SizedBox(
+                            height: 10.0,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                )
+              ],
+            );
+          },
+        ),
+      ),
+      floatingActionButton: ScrollAwareFab(
+        scrollController: _scrollController,
+      ),
     );
   }
 
@@ -144,20 +185,20 @@ class _PeopleScreenState extends State<PeopleScreen> {
                   ),
                 ),
               ),
-              Positioned(
-                top: 8,
-                right: 8,
-                child: Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.7),
-                    shape: BoxShape.circle,
-                  ),
-                  child: CircularProgressIndicatorWithPercentage(
-                    percentage: (rating * 10),
-                  ),
-                ),
-              ),
+              // Positioned(
+              //   top: 8,
+              //   right: 8,
+              //   child: Container(
+              //     padding: const EdgeInsets.all(4),
+              //     decoration: BoxDecoration(
+              //       color: Colors.black.withOpacity(0.7),
+              //       shape: BoxShape.circle,
+              //     ),
+              //     child: CircularProgressIndicatorWithPercentage(
+              //       percentage: (rating * 10),
+              //     ),
+              //   ),
+              // ),
             ],
           ),
           const SizedBox(height: 8),

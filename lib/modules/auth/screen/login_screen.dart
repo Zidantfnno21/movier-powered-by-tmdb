@@ -105,11 +105,6 @@ class _LoginScreenState extends State<LoginScreen>
               context, 'Error occurred while creating session: $onError');
         }
       },
-      onTimeout: () {
-        if (mounted) {
-          _showErrorDialog(context, 'Timeout occurred while creating session');
-        }
-      },
     );
   }
 
@@ -132,47 +127,6 @@ class _LoginScreenState extends State<LoginScreen>
       },
     );
   }
-  // void _initDeepLinkListener() {
-  //   _sub = _appLinks.uriLinkStream.listen((Uri? uri) {
-  //     if(uri != null) {
-  //       _handleDeepLink(uri);
-  //     }
-  //   }, onError: (err) {
-  //     print('Error occurred while listening to deep links: $err');
-  //   },
-  //   );
-  // }
-  // void _handleDeepLink(Uri uri) async {
-  //   final isApproved = uri.queryParameters['approved'] == 'true';
-  //   final requestToken = uri.queryParameters['request_token'];
-  //
-  //   if (isApproved && requestToken != null) {
-  //     try {
-  //       final sessionId = await TmdbService().createSessionId(requestToken);
-  //       print('Session ID: $sessionId');
-  //       SharedPreferencesService().saveSessionId(sessionId);
-  //       if(mounted) context.go(Routes.home);
-  //     } catch (e) {
-  //       print('Error creating session ID: $e');
-  //     }
-  //   } else {
-  //     print('Token not approved or missing request token.');
-  //   }
-  // }
-  // Future<void> handleLogin() async {
-  //   try {
-  //     final requestToken = await TmdbService.createRequestToken();
-  //     print('Request Token: $requestToken');
-  //
-  //     await openTMDBLogin(requestToken);
-  //
-  //   } catch (e) {
-  //     print('Error: $e');
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       SnackBar(content: Text('Login failed: $e')),
-  //     );
-  //   }
-  // }
 
   @override
   void dispose() {
@@ -188,24 +142,23 @@ class _LoginScreenState extends State<LoginScreen>
       body: AnimatedBuilder(
         animation: _animation,
         builder: (context, child) {
-          // Calculate x and y for circular path
+
           final double x = cos(_animation.value);
           final double y = sin(_animation.value);
 
           return Stack(
             children: [
-              // Moving gradient background
               Container(
                 decoration: BoxDecoration(
                   gradient: RadialGradient(
-                    center: Alignment(x, y), // Circular path
+                    center: Alignment(x, y),
                     radius: 2.8,
                     colors: [
                       Theme.of(context).colorScheme.secondary,
                       Theme.of(context).colorScheme.secondary,
                       Theme.of(context).colorScheme.primary,
                     ],
-                    stops: const [0.3, 0.3, 4.0],
+                    stops: const [-4.0, 0.0, 4.0],
                   ),
                 ),
               ),
@@ -298,32 +251,4 @@ class _LoginScreenState extends State<LoginScreen>
       ),
     );
   }
-
-  double _calculateTextWidth(String text) {
-    final textPainter = TextPainter(
-      text: TextSpan(text: text, style: const TextStyle(fontSize: 16)),
-      maxLines: 1,
-      textDirection: TextDirection.ltr,
-    )..layout();
-    return textPainter.size.width;
-  }
-
-  double _calculateTextHeight(String text) {
-    final textPainter = TextPainter(
-      text: TextSpan(text: text, style: const TextStyle(fontSize: 16)),
-      maxLines: 1,
-      textDirection: TextDirection.ltr,
-    )..layout();
-    return textPainter.size.height;
-  }
-
-  // void _startTmdbAuth() async {
-  //   try {
-  //     final requestToken = await TmdbService().createRequestToken();
-  //     final authUrl = 'https://www.themoviedb.org/authenticate/$requestToken?redirect_to=myapp://tmdb.com?approved=true';
-  //     await TmdbService().askUserForPermission(authUrl);
-  //   } catch (e) {
-  //     print(e);
-  //   }
-  // }
 }

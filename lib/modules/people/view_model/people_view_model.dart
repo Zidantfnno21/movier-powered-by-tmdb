@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:the_movie_databases/data/local/databases/entity/tv_shows.dart';
 import 'package:the_movie_databases/data/repositories/people/people_repository.dart';
 import 'package:the_movie_databases/utils/result.dart';
 
@@ -15,11 +14,13 @@ class PeopleViewModel with ChangeNotifier {
   List<People> _people = [];
   bool _isLoading = false;
   bool _isLoadingMore = false;
+  bool _hasMore = true;
   int _currentPage = 1;
 
   List<People> get people => _people;
   bool get isLoading => _isLoading;
   bool get isLoadingMore => _isLoadingMore;
+  bool get hasMore => _hasMore;
 
   Future<Result<void>> fetchPeople({bool isRefresh = false}) async {
     _currentPage = 1;
@@ -49,6 +50,8 @@ class PeopleViewModel with ChangeNotifier {
   }
 
   Future<Result<void>> loadMorePeople() async {
+    if (!_hasMore || _isLoadingMore) return const Result.ok(null);
+
     _isLoadingMore = true;
     notifyListeners();
 
@@ -72,6 +75,8 @@ class PeopleViewModel with ChangeNotifier {
         if (newPeople.isNotEmpty) {
           _people.addAll(newPeople);
           _currentPage = nextPage;
+        }else if(newPeople.isEmpty){
+          _hasMore = false;
         }
 
         _isLoadingMore = false;
