@@ -418,7 +418,7 @@ class TmdbClientImpl implements TmdbClient {
     final String? sessionId = sessionIdsProvider?.call();
     _log.info('sessionId: $sessionId');
     final String url =
-        '$baseUrl/movie/$id?api_key=$apiKey${sessionId != null ? '&$sessionId' : ''}&append_to_response=account_states%2Cvideos%2Ccredits';
+        '$baseUrl/movie/$id?api_key=$apiKey${sessionId != null ? '&$sessionId' : ''}&append_to_response=account_states%2Cvideos%2Ccredits%2Creviews';
     try {
       final response = await dio.get(url);
       _log.finer('raw json(movie details): ${response.data}');
@@ -436,7 +436,7 @@ class TmdbClientImpl implements TmdbClient {
   Future<Result<DetailsTvShows>> fetchTvShowsDetails(int id) async {
     final String? sessionId = sessionIdsProvider?.call();
     final String url =
-        '$baseUrl/tv/$id?api_key=$apiKey${sessionId != null ? '&$sessionId' : ''}&append_to_response=account_states%2Cvideos%2Caggregate_credits';
+        '$baseUrl/tv/$id?api_key=$apiKey${sessionId != null ? '&$sessionId' : ''}&append_to_response=account_states%2Cvideos%2Caggregate_credits%2Creviews';
     try {
       final response = await dio.get(url);
       _log.finer('raw json(tv shows details): ${response.data}');

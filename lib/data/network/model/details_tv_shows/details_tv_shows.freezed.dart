@@ -91,6 +91,8 @@ mixin _$DetailsTvShows {
   Videos? get videos => throw _privateConstructorUsedError;
   @JsonKey(name: 'account_states')
   AccountStates? get accountStates => throw _privateConstructorUsedError;
+  @JsonKey(name: 'reviews')
+  Reviews? get reviews => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
   @JsonKey(ignore: true)
@@ -140,13 +142,15 @@ abstract class $DetailsTvShowsCopyWith<$Res> {
       @JsonKey(name: 'vote_count') int? voteCount,
       @JsonKey(name: 'aggregate_credits') AggregateCredits? aggregateCredits,
       @JsonKey(name: 'videos') Videos? videos,
-      @JsonKey(name: 'account_states') AccountStates? accountStates});
+      @JsonKey(name: 'account_states') AccountStates? accountStates,
+      @JsonKey(name: 'reviews') Reviews? reviews});
 
   $EpisodeCopyWith<$Res>? get lastEpisodeToAir;
   $EpisodeCopyWith<$Res>? get nextEpisodeToAir;
   $AggregateCreditsCopyWith<$Res>? get aggregateCredits;
   $VideosCopyWith<$Res>? get videos;
   $AccountStatesCopyWith<$Res>? get accountStates;
+  $ReviewsCopyWith<$Res>? get reviews;
 }
 
 /// @nodoc
@@ -196,6 +200,7 @@ class _$DetailsTvShowsCopyWithImpl<$Res, $Val extends DetailsTvShows>
     Object? aggregateCredits = freezed,
     Object? videos = freezed,
     Object? accountStates = freezed,
+    Object? reviews = freezed,
   }) {
     return _then(_value.copyWith(
       adult: null == adult
@@ -334,6 +339,10 @@ class _$DetailsTvShowsCopyWithImpl<$Res, $Val extends DetailsTvShows>
           ? _value.accountStates
           : accountStates // ignore: cast_nullable_to_non_nullable
               as AccountStates?,
+      reviews: freezed == reviews
+          ? _value.reviews
+          : reviews // ignore: cast_nullable_to_non_nullable
+              as Reviews?,
     ) as $Val);
   }
 
@@ -396,6 +405,18 @@ class _$DetailsTvShowsCopyWithImpl<$Res, $Val extends DetailsTvShows>
       return _then(_value.copyWith(accountStates: value) as $Val);
     });
   }
+
+  @override
+  @pragma('vm:prefer-inline')
+  $ReviewsCopyWith<$Res>? get reviews {
+    if (_value.reviews == null) {
+      return null;
+    }
+
+    return $ReviewsCopyWith<$Res>(_value.reviews!, (value) {
+      return _then(_value.copyWith(reviews: value) as $Val);
+    });
+  }
 }
 
 /// @nodoc
@@ -442,7 +463,8 @@ abstract class _$$DetailsTvShowsImplCopyWith<$Res>
       @JsonKey(name: 'vote_count') int? voteCount,
       @JsonKey(name: 'aggregate_credits') AggregateCredits? aggregateCredits,
       @JsonKey(name: 'videos') Videos? videos,
-      @JsonKey(name: 'account_states') AccountStates? accountStates});
+      @JsonKey(name: 'account_states') AccountStates? accountStates,
+      @JsonKey(name: 'reviews') Reviews? reviews});
 
   @override
   $EpisodeCopyWith<$Res>? get lastEpisodeToAir;
@@ -454,6 +476,8 @@ abstract class _$$DetailsTvShowsImplCopyWith<$Res>
   $VideosCopyWith<$Res>? get videos;
   @override
   $AccountStatesCopyWith<$Res>? get accountStates;
+  @override
+  $ReviewsCopyWith<$Res>? get reviews;
 }
 
 /// @nodoc
@@ -501,6 +525,7 @@ class __$$DetailsTvShowsImplCopyWithImpl<$Res>
     Object? aggregateCredits = freezed,
     Object? videos = freezed,
     Object? accountStates = freezed,
+    Object? reviews = freezed,
   }) {
     return _then(_$DetailsTvShowsImpl(
       adult: null == adult
@@ -639,6 +664,10 @@ class __$$DetailsTvShowsImplCopyWithImpl<$Res>
           ? _value.accountStates
           : accountStates // ignore: cast_nullable_to_non_nullable
               as AccountStates?,
+      reviews: freezed == reviews
+          ? _value.reviews
+          : reviews // ignore: cast_nullable_to_non_nullable
+              as Reviews?,
     ));
   }
 }
@@ -683,7 +712,8 @@ class _$DetailsTvShowsImpl implements _DetailsTvShows {
       @JsonKey(name: 'vote_count') this.voteCount,
       @JsonKey(name: 'aggregate_credits') this.aggregateCredits,
       @JsonKey(name: 'videos') this.videos,
-      @JsonKey(name: 'account_states') this.accountStates})
+      @JsonKey(name: 'account_states') this.accountStates,
+      @JsonKey(name: 'reviews') this.reviews})
       : _createdBy = createdBy,
         _episodeRunTime = episodeRunTime,
         _genres = genres,
@@ -882,10 +912,13 @@ class _$DetailsTvShowsImpl implements _DetailsTvShows {
   @override
   @JsonKey(name: 'account_states')
   final AccountStates? accountStates;
+  @override
+  @JsonKey(name: 'reviews')
+  final Reviews? reviews;
 
   @override
   String toString() {
-    return 'DetailsTvShows(adult: $adult, backdropPath: $backdropPath, createdBy: $createdBy, episodeRunTime: $episodeRunTime, firstAirDate: $firstAirDate, genres: $genres, homepage: $homepage, id: $id, inProduction: $inProduction, languages: $languages, lastAirDate: $lastAirDate, lastEpisodeToAir: $lastEpisodeToAir, name: $name, nextEpisodeToAir: $nextEpisodeToAir, networks: $networks, numberOfEpisodes: $numberOfEpisodes, numberOfSeasons: $numberOfSeasons, originCountry: $originCountry, originalLanguage: $originalLanguage, originalName: $originalName, overview: $overview, popularity: $popularity, posterPath: $posterPath, productionCompanies: $productionCompanies, productionCountries: $productionCountries, seasons: $seasons, spokenLanguages: $spokenLanguages, status: $status, tagline: $tagline, voteAverage: $voteAverage, voteCount: $voteCount, aggregateCredits: $aggregateCredits, videos: $videos, accountStates: $accountStates)';
+    return 'DetailsTvShows(adult: $adult, backdropPath: $backdropPath, createdBy: $createdBy, episodeRunTime: $episodeRunTime, firstAirDate: $firstAirDate, genres: $genres, homepage: $homepage, id: $id, inProduction: $inProduction, languages: $languages, lastAirDate: $lastAirDate, lastEpisodeToAir: $lastEpisodeToAir, name: $name, nextEpisodeToAir: $nextEpisodeToAir, networks: $networks, numberOfEpisodes: $numberOfEpisodes, numberOfSeasons: $numberOfSeasons, originCountry: $originCountry, originalLanguage: $originalLanguage, originalName: $originalName, overview: $overview, popularity: $popularity, posterPath: $posterPath, productionCompanies: $productionCompanies, productionCountries: $productionCountries, seasons: $seasons, spokenLanguages: $spokenLanguages, status: $status, tagline: $tagline, voteAverage: $voteAverage, voteCount: $voteCount, aggregateCredits: $aggregateCredits, videos: $videos, accountStates: $accountStates, reviews: $reviews)';
   }
 
   @override
@@ -951,7 +984,8 @@ class _$DetailsTvShowsImpl implements _DetailsTvShows {
                 other.aggregateCredits == aggregateCredits) &&
             (identical(other.videos, videos) || other.videos == videos) &&
             (identical(other.accountStates, accountStates) ||
-                other.accountStates == accountStates));
+                other.accountStates == accountStates) &&
+            (identical(other.reviews, reviews) || other.reviews == reviews));
   }
 
   @JsonKey(ignore: true)
@@ -991,7 +1025,8 @@ class _$DetailsTvShowsImpl implements _DetailsTvShows {
         voteCount,
         aggregateCredits,
         videos,
-        accountStates
+        accountStates,
+        reviews
       ]);
 
   @JsonKey(ignore: true)
@@ -1048,8 +1083,8 @@ abstract class _DetailsTvShows implements DetailsTvShows {
       @JsonKey(name: 'aggregate_credits')
       final AggregateCredits? aggregateCredits,
       @JsonKey(name: 'videos') final Videos? videos,
-      @JsonKey(name: 'account_states')
-      final AccountStates? accountStates}) = _$DetailsTvShowsImpl;
+      @JsonKey(name: 'account_states') final AccountStates? accountStates,
+      @JsonKey(name: 'reviews') final Reviews? reviews}) = _$DetailsTvShowsImpl;
 
   factory _DetailsTvShows.fromJson(Map<String, dynamic> json) =
       _$DetailsTvShowsImpl.fromJson;
@@ -1156,6 +1191,9 @@ abstract class _DetailsTvShows implements DetailsTvShows {
   @override
   @JsonKey(name: 'account_states')
   AccountStates? get accountStates;
+  @override
+  @JsonKey(name: 'reviews')
+  Reviews? get reviews;
   @override
   @JsonKey(ignore: true)
   _$$DetailsTvShowsImplCopyWith<_$DetailsTvShowsImpl> get copyWith =>

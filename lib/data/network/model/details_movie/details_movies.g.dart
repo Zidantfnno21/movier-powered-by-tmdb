@@ -54,6 +54,9 @@ _$DetailsMoviesImpl _$$DetailsMoviesImplFromJson(Map<String, dynamic> json) =>
           ? null
           : AccountStates.fromJson(
               json['account_states'] as Map<String, dynamic>),
+      reviews: json['reviews'] == null
+          ? null
+          : Reviews.fromJson(json['reviews'] as Map<String, dynamic>),
     );
 
 Map<String, dynamic> _$$DetailsMoviesImplToJson(_$DetailsMoviesImpl instance) =>
@@ -86,6 +89,7 @@ Map<String, dynamic> _$$DetailsMoviesImplToJson(_$DetailsMoviesImpl instance) =>
       'credits': instance.credits,
       'videos': instance.videos,
       'account_states': instance.accountStates,
+      'reviews': instance.reviews,
     };
 
 _$BelongsToCollectionImpl _$$BelongsToCollectionImplFromJson(

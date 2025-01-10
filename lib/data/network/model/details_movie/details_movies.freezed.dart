@@ -80,6 +80,8 @@ mixin _$DetailsMovies {
   Videos? get videos => throw _privateConstructorUsedError;
   @JsonKey(name: 'account_states')
   AccountStates? get accountStates => throw _privateConstructorUsedError;
+  @JsonKey(name: 'reviews')
+  Reviews? get reviews => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
   @JsonKey(ignore: true)
@@ -124,12 +126,14 @@ abstract class $DetailsMoviesCopyWith<$Res> {
       @JsonKey(name: 'vote_count') int voteCount,
       @JsonKey(name: 'credits') Credits? credits,
       @JsonKey(name: 'videos') Videos? videos,
-      @JsonKey(name: 'account_states') AccountStates? accountStates});
+      @JsonKey(name: 'account_states') AccountStates? accountStates,
+      @JsonKey(name: 'reviews') Reviews? reviews});
 
   $BelongsToCollectionCopyWith<$Res>? get belongsToCollection;
   $CreditsCopyWith<$Res>? get credits;
   $VideosCopyWith<$Res>? get videos;
   $AccountStatesCopyWith<$Res>? get accountStates;
+  $ReviewsCopyWith<$Res>? get reviews;
 }
 
 /// @nodoc
@@ -173,6 +177,7 @@ class _$DetailsMoviesCopyWithImpl<$Res, $Val extends DetailsMovies>
     Object? credits = freezed,
     Object? videos = freezed,
     Object? accountStates = freezed,
+    Object? reviews = freezed,
   }) {
     return _then(_value.copyWith(
       adult: null == adult
@@ -287,6 +292,10 @@ class _$DetailsMoviesCopyWithImpl<$Res, $Val extends DetailsMovies>
           ? _value.accountStates
           : accountStates // ignore: cast_nullable_to_non_nullable
               as AccountStates?,
+      reviews: freezed == reviews
+          ? _value.reviews
+          : reviews // ignore: cast_nullable_to_non_nullable
+              as Reviews?,
     ) as $Val);
   }
 
@@ -338,6 +347,18 @@ class _$DetailsMoviesCopyWithImpl<$Res, $Val extends DetailsMovies>
       return _then(_value.copyWith(accountStates: value) as $Val);
     });
   }
+
+  @override
+  @pragma('vm:prefer-inline')
+  $ReviewsCopyWith<$Res>? get reviews {
+    if (_value.reviews == null) {
+      return null;
+    }
+
+    return $ReviewsCopyWith<$Res>(_value.reviews!, (value) {
+      return _then(_value.copyWith(reviews: value) as $Val);
+    });
+  }
 }
 
 /// @nodoc
@@ -379,7 +400,8 @@ abstract class _$$DetailsMoviesImplCopyWith<$Res>
       @JsonKey(name: 'vote_count') int voteCount,
       @JsonKey(name: 'credits') Credits? credits,
       @JsonKey(name: 'videos') Videos? videos,
-      @JsonKey(name: 'account_states') AccountStates? accountStates});
+      @JsonKey(name: 'account_states') AccountStates? accountStates,
+      @JsonKey(name: 'reviews') Reviews? reviews});
 
   @override
   $BelongsToCollectionCopyWith<$Res>? get belongsToCollection;
@@ -389,6 +411,8 @@ abstract class _$$DetailsMoviesImplCopyWith<$Res>
   $VideosCopyWith<$Res>? get videos;
   @override
   $AccountStatesCopyWith<$Res>? get accountStates;
+  @override
+  $ReviewsCopyWith<$Res>? get reviews;
 }
 
 /// @nodoc
@@ -430,6 +454,7 @@ class __$$DetailsMoviesImplCopyWithImpl<$Res>
     Object? credits = freezed,
     Object? videos = freezed,
     Object? accountStates = freezed,
+    Object? reviews = freezed,
   }) {
     return _then(_$DetailsMoviesImpl(
       adult: null == adult
@@ -544,6 +569,10 @@ class __$$DetailsMoviesImplCopyWithImpl<$Res>
           ? _value.accountStates
           : accountStates // ignore: cast_nullable_to_non_nullable
               as AccountStates?,
+      reviews: freezed == reviews
+          ? _value.reviews
+          : reviews // ignore: cast_nullable_to_non_nullable
+              as Reviews?,
     ));
   }
 }
@@ -582,7 +611,8 @@ class _$DetailsMoviesImpl implements _DetailsMovies {
       @JsonKey(name: 'vote_count') required this.voteCount,
       @JsonKey(name: 'credits') this.credits,
       @JsonKey(name: 'videos') this.videos,
-      @JsonKey(name: 'account_states') this.accountStates})
+      @JsonKey(name: 'account_states') this.accountStates,
+      @JsonKey(name: 'reviews') this.reviews})
       : _genres = genres,
         _productionCompanies = productionCompanies,
         _productionCountries = productionCountries,
@@ -701,10 +731,13 @@ class _$DetailsMoviesImpl implements _DetailsMovies {
   @override
   @JsonKey(name: 'account_states')
   final AccountStates? accountStates;
+  @override
+  @JsonKey(name: 'reviews')
+  final Reviews? reviews;
 
   @override
   String toString() {
-    return 'DetailsMovies(adult: $adult, backdropPath: $backdropPath, belongsToCollection: $belongsToCollection, budget: $budget, genres: $genres, homepage: $homepage, id: $id, imdbId: $imdbId, originalLanguage: $originalLanguage, originalTitle: $originalTitle, overview: $overview, popularity: $popularity, posterPath: $posterPath, productionCompanies: $productionCompanies, productionCountries: $productionCountries, releaseDate: $releaseDate, revenue: $revenue, runtime: $runtime, spokenLanguages: $spokenLanguages, status: $status, tagline: $tagline, title: $title, video: $video, voteAverage: $voteAverage, voteCount: $voteCount, credits: $credits, videos: $videos, accountStates: $accountStates)';
+    return 'DetailsMovies(adult: $adult, backdropPath: $backdropPath, belongsToCollection: $belongsToCollection, budget: $budget, genres: $genres, homepage: $homepage, id: $id, imdbId: $imdbId, originalLanguage: $originalLanguage, originalTitle: $originalTitle, overview: $overview, popularity: $popularity, posterPath: $posterPath, productionCompanies: $productionCompanies, productionCountries: $productionCountries, releaseDate: $releaseDate, revenue: $revenue, runtime: $runtime, spokenLanguages: $spokenLanguages, status: $status, tagline: $tagline, title: $title, video: $video, voteAverage: $voteAverage, voteCount: $voteCount, credits: $credits, videos: $videos, accountStates: $accountStates, reviews: $reviews)';
   }
 
   @override
@@ -754,7 +787,8 @@ class _$DetailsMoviesImpl implements _DetailsMovies {
             (identical(other.credits, credits) || other.credits == credits) &&
             (identical(other.videos, videos) || other.videos == videos) &&
             (identical(other.accountStates, accountStates) ||
-                other.accountStates == accountStates));
+                other.accountStates == accountStates) &&
+            (identical(other.reviews, reviews) || other.reviews == reviews));
   }
 
   @JsonKey(ignore: true)
@@ -788,7 +822,8 @@ class _$DetailsMoviesImpl implements _DetailsMovies {
         voteCount,
         credits,
         videos,
-        accountStates
+        accountStates,
+        reviews
       ]);
 
   @JsonKey(ignore: true)
@@ -839,8 +874,8 @@ abstract class _DetailsMovies implements DetailsMovies {
       @JsonKey(name: 'vote_count') required final int voteCount,
       @JsonKey(name: 'credits') final Credits? credits,
       @JsonKey(name: 'videos') final Videos? videos,
-      @JsonKey(name: 'account_states')
-      final AccountStates? accountStates}) = _$DetailsMoviesImpl;
+      @JsonKey(name: 'account_states') final AccountStates? accountStates,
+      @JsonKey(name: 'reviews') final Reviews? reviews}) = _$DetailsMoviesImpl;
 
   factory _DetailsMovies.fromJson(Map<String, dynamic> json) =
       _$DetailsMoviesImpl.fromJson;
@@ -929,6 +964,9 @@ abstract class _DetailsMovies implements DetailsMovies {
   @override
   @JsonKey(name: 'account_states')
   AccountStates? get accountStates;
+  @override
+  @JsonKey(name: 'reviews')
+  Reviews? get reviews;
   @override
   @JsonKey(ignore: true)
   _$$DetailsMoviesImplCopyWith<_$DetailsMoviesImpl> get copyWith =>

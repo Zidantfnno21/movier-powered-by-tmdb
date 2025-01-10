@@ -1,10 +1,13 @@
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:the_movie_databases/modules/details/screen/cast_screen.dart';
 import 'package:the_movie_databases/modules/details/view_model/details_view_model.dart';
 import 'package:the_movie_databases/utils/auth_extensions.dart';
+import 'package:the_movie_databases/utils/date_utils.dart';
+import 'package:the_movie_databases/widgets/review_widget.dart';
 
 import '../../../config/auth_state.dart';
 import '../../../data/local/databases/entity/movies.dart';
@@ -99,6 +102,139 @@ class _DetailsScreenState<T> extends State<DetailsScreen<T>> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildReview() {
+    if (widget.viewModel.reviews.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    final reviewsToShow = widget.viewModel.reviews.take(3).toList();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Divider(color: Colors.grey),
+        const SizedBox(height: 16),
+        const Row(
+          children: [
+            Text(
+              'Review',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Column(
+          children: reviewsToShow.map((review) {
+            final avatar =
+                'https://image.tmdb.org/t/p/w500${review.authorDetails.avatarPath}';
+
+            return Container(
+              margin: const EdgeInsets.only(bottom: 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      ClipOval(
+                        child: CachedNetworkImage(
+                          key: ValueKey(avatar),
+                          imageUrl: avatar,
+                          width: 60,
+                          height: 60,
+                          fit: BoxFit.cover,
+                          placeholder: (context, url) => const Icon(
+                            Icons.account_circle_rounded,
+                            size: 60,
+                          ),
+                          errorWidget: (context, url, error) => const Icon(
+                            Icons.account_circle_rounded,
+                            size: 60,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            review.author ?? 'author',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            review.authorDetails.username ?? 'username',
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                          const SizedBox(height: 4),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: _getColorByRating(
+                                  review.authorDetails.rating?.toDouble() ?? 0, context),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.star,
+                                  color: _getContrastingTextColor(
+                                      _getColorByRating(
+                                          review.authorDetails.rating?.toDouble() ?? 0, context)),
+                                  size: 16,
+                                ),
+                                const SizedBox(width: 4),
+                                if ((review.authorDetails.rating?.toDouble() ?? 0 ) > 0)
+                                  Text(
+                                    '${((review.authorDetails.rating?.toDouble() ?? 0 ) * 10).round().toString()}%',
+                                    style: TextStyle(
+                                        color: _getContrastingTextColor(
+                                            _getColorByRating(
+                                                review.authorDetails.rating?.toDouble() ?? 0,
+                                                context))),
+                                  ),
+                                if ((review.authorDetails.rating?.toDouble() ?? 0) == 0)
+                                  Text(
+                                    'Not rated',
+                                    style: TextStyle(
+                                        color: _getContrastingTextColor(
+                                            _getColorByRating(
+                                                review.authorDetails.rating?.toDouble() ?? 0,
+                                                context)),
+                                        fontWeight: FontWeight.w700),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  ReviewWidget(content: review.content ?? ''),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Updated at: ${DateConverter.formatToLocalTime(review.updatedAt ?? '')}',
+                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
+                ],
+              ),
+            );
+          }).toList(),
+        ),
+      ],
     );
   }
 
@@ -957,6 +1093,8 @@ class _DetailsScreenState<T> extends State<DetailsScreen<T>> {
                           const SizedBox(height: 8),
                           const Divider(color: Colors.grey),
                           _buildTvShowsCast(),
+                          const SizedBox(height: 8),
+                          _buildReview(),
                           const SizedBox(height: 16),
                         ],
                       ),
@@ -1495,6 +1633,8 @@ class _DetailsScreenState<T> extends State<DetailsScreen<T>> {
                               const SizedBox(height: 8),
                               const Divider(color: Colors.grey),
                               _buildMovieCast(),
+                              const SizedBox(height: 8),
+                              _buildReview(),
                               const SizedBox(height: 16),
                             ],
                           );
@@ -1527,7 +1667,7 @@ Color _getColorByRating(double voteAverage, BuildContext context) {
 
   double percentage = voteAverage * 10;
 
-  if (percentage.abs() < 1e-2) {
+  if (percentage == 100) {
     return Theme.of(context).colorScheme.primary; // Near perfect
   } else if (percentage >= 61.8) {
     return Colors.green; // High score

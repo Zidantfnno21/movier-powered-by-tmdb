@@ -5,7 +5,7 @@ import 'package:the_movie_databases/data/network/model/account_states/account_st
 import 'package:the_movie_databases/data/network/model/genre/genre.dart';
 import 'package:the_movie_databases/data/network/model/production_companies/production_company.dart';
 import 'package:the_movie_databases/data/network/model/production_countries/production_country.dart';
-
+import '../reviews/reviews.dart';
 import '../videos/videos.dart';
 
 part 'details_movies.freezed.dart';
@@ -45,6 +45,7 @@ class DetailsMovies with _$DetailsMovies {
     @JsonKey(name: 'credits') Credits? credits,
     @JsonKey(name: 'videos') Videos? videos,
     @JsonKey(name: 'account_states') AccountStates? accountStates,
+    @JsonKey(name: 'reviews') Reviews? reviews,
   }) = _DetailsMovies;
 
   factory DetailsMovies.fromJson(Map<String, dynamic> json) =>

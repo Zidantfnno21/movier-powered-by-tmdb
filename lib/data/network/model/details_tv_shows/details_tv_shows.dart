@@ -7,6 +7,7 @@ import 'package:the_movie_databases/data/network/model/videos/videos.dart';
 
 import '../genre/genre.dart';
 import '../production_companies/production_company.dart';
+import '../reviews/reviews.dart';
 
 part 'details_tv_shows.freezed.dart';
 part 'details_tv_shows.g.dart';
@@ -50,6 +51,7 @@ class DetailsTvShows with _$DetailsTvShows {
     @JsonKey(name: 'aggregate_credits') AggregateCredits? aggregateCredits,
     @JsonKey(name: 'videos') Videos? videos,
     @JsonKey(name: 'account_states') AccountStates? accountStates,
+    @JsonKey(name: 'reviews') Reviews? reviews,
   }) = _DetailsTvShows;
 
   factory DetailsTvShows.fromJson(Map<String, dynamic> json) =>

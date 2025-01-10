@@ -109,6 +109,7 @@ class _VideoScreenState extends State<VideoScreen> {
                             ProgressBar(isExpanded: true),
                             RemainingDuration(),
                             const PlaybackSpeedButton(),
+                            FullScreenButton(),
                         ],
                       ),
                     ),

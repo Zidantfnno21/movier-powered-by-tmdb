@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:the_movie_databases/data/network/model/details_movie/details_movies.dart';
 import 'package:the_movie_databases/data/network/model/details_people/details_people.dart';
 import 'package:the_movie_databases/data/network/model/details_tv_shows/details_tv_shows.dart';
+import 'package:the_movie_databases/data/network/model/reviews/review.dart';
 import 'package:the_movie_databases/data/repositories/details/details_repository.dart';
 import 'package:the_movie_databases/data/repositories/favourites/favourites_repository.dart';
 import 'package:the_movie_databases/utils/result.dart';
@@ -27,6 +28,7 @@ class DetailsViewModel with ChangeNotifier {
   List<MovieCast> _movieCast = [];
   List<Cast> _tvShowCast = [];
   List<CastWithCharacter> _peopleCast = [];
+  List<Review> _reviews = [];
 
   DetailsMovies? _movieDetails;
   DetailsTvShows? _tvShowsDetails;
@@ -34,7 +36,6 @@ class DetailsViewModel with ChangeNotifier {
 
   bool _isLoading = false;
   bool _isFavorites = false;
-  bool _isLoadingVideos = false;
   String? _error;
 
   List<String> get listOfGenreName => _listOfGenreName;
@@ -43,12 +44,12 @@ class DetailsViewModel with ChangeNotifier {
   DetailsTvShows? get tvShowsDetails => _tvShowsDetails;
   DetailsPeople? get peopleDetails => _peopleDetails;
   bool get isLoading => _isLoading;
-  bool get isLoadingVideos => _isLoadingVideos;
   bool get isFavorites => _isFavorites;
   String? get error => _error;
   List<MovieCast> get movieCast => _movieCast;
   List<Cast> get tvShowCast => _tvShowCast;
   List<CastWithCharacter> get peopleCast => _peopleCast;
+  List<Review> get reviews => _reviews;
 
   // Future<void> fetchGenres() async {
   //   try {
@@ -172,6 +173,11 @@ class DetailsViewModel with ChangeNotifier {
           _movieCast = List.from(_movieDetails!.credits!.cast)
             ..sort((a, b) => (a.order).compareTo(b.order));
         }
+
+        if (_movieDetails!.reviews!.totalResults! > 0) {
+          _reviews = _movieDetails!.reviews!.results;
+        }
+
         _isFavorites = _movieDetails!.accountStates?.favorite ?? false;
         return const Result.ok(null);
       }
@@ -207,6 +213,10 @@ class DetailsViewModel with ChangeNotifier {
         if (_tvShowsDetails!.aggregateCredits!.cast.isNotEmpty) {
           _tvShowCast = List.from(_tvShowsDetails!.aggregateCredits!.cast)
             ..sort((a, b) => (a.order).compareTo(b.order));
+        }
+
+        if (_tvShowsDetails!.reviews!.totalResults! > 0) {
+          _reviews = _tvShowsDetails!.reviews!.results;
         }
 
         _isFavorites = _tvShowsDetails!.accountStates?.favorite ?? false;
@@ -260,6 +270,7 @@ class DetailsViewModel with ChangeNotifier {
     _tvShowsDetails = null;
     _listOfVideos.clear();
     _listOfGenreName.clear();
+    _reviews.clear();
     _error = null;
     notifyListeners();
   }

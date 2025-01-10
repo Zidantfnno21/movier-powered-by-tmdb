@@ -76,6 +76,9 @@ _$DetailsTvShowsImpl _$$DetailsTvShowsImplFromJson(Map<String, dynamic> json) =>
           ? null
           : AccountStates.fromJson(
               json['account_states'] as Map<String, dynamic>),
+      reviews: json['reviews'] == null
+          ? null
+          : Reviews.fromJson(json['reviews'] as Map<String, dynamic>),
     );
 
 Map<String, dynamic> _$$DetailsTvShowsImplToJson(
@@ -115,6 +118,7 @@ Map<String, dynamic> _$$DetailsTvShowsImplToJson(
       'aggregate_credits': instance.aggregateCredits,
       'videos': instance.videos,
       'account_states': instance.accountStates,
+      'reviews': instance.reviews,
     };
 
 _$CreatorImpl _$$CreatorImplFromJson(Map<String, dynamic> json) =>

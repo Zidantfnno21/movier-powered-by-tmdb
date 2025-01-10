@@ -34,9 +34,9 @@ class ApiResponse<T> {
   //   'page': page,
   //   'results': results.map(toJsonT).toList(),
   // };
-  Map<String, dynamic> toJson(T Function(T) toJsonT) {
-    return _$ApiResponseToJson(this, toJsonT);
-  }
+  Map<String, dynamic> toJson(
+      T Function(T) toJsonT
+      ) => _$ApiResponseToJson(this, toJsonT);
 }
 
 @JsonSerializable()
